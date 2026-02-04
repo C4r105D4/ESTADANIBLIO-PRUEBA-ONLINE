@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inversión Institucional - Sistema DEREA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .btn-nav {
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .main-container {
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 1rem;
+        }
+        
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 3rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-card:hover {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+        }
+        
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #e8f2ff 0%, #d8e9ff 100%);
+            transform: scale(1.02);
+        }
+        
+        .upload-zone.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-hint {
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+        
+        .stats-container {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-right: 1rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+        }
+        
+        .stat-icon.libros {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .stat-icon.revistas {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .stat-icon.bases {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .stat-icon.total {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .stat-content h3 {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .data-table th {
+            padding: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .data-table td {
+            padding: 0.8rem;
+            text-align: right;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .data-table td:first-child {
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+        
+        .btn-action {
+            border-radius: 15px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert-custom {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner-border-custom {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-building me-2"></i>
+                Inversión Institucional
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('inversiones') }}" class="btn btn-light btn-nav btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Volver
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-nav btn-sm">
+                    <i class="bi bi-house me-1"></i>
+                    Inicio
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-nav btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>
+                    Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="bi bi-building-fill me-2"></i>
+                Inversión Institucional en Recursos Bibliográficos
+            </h1>
+            <p class="page-subtitle">
+                Carga tu archivo Excel para visualizar estadísticas de inversión
+            </p>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="upload-card">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">
+                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                </div>
+                <div class="upload-text">
+                    <strong>Arrastra tu archivo Excel aquí</strong> o haz clic para seleccionar
+                </div>
+                <div class="upload-hint">
+                    Formatos soportados: .xlsx, .xls (Máximo 10MB)<br>
+                    <a href="#" onclick="downloadTemplate(); return false;" class="text-primary">
+                        <i class="bi bi-download me-1"></i>Descargar plantilla Excel
+                    </a>
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+            </div>
+            
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border spinner-border-custom text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3 text-muted">Procesando archivo...</p>
+            </div>
+        </div>
+
+        <!-- Stats Container -->
+        <div class="stats-container" id="statsContainer">
+            
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon libros">
+                                <i class="bi bi-book-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Total Libros</h3>
+                                <div class="stat-value" id="statLibros">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon revistas">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Total Revistas</h3>
+                                <div class="stat-value" id="statRevistas">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon bases">
+                                <i class="bi bi-database-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Bases de Datos</h3>
+                                <div class="stat-value" id="statBases">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon total">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Inversión Total</h3>
+                                <div class="stat-value" id="statTotal">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-lg-7 mb-4">
+                    <div class="chart-card">
+                        <h3 class="chart-title">
+                            <i class="bi bi-graph-up me-2"></i>
+                            Evolución de Inversión por Año
+                        </h3>
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="col-lg-5 mb-4">
+                    <div class="chart-card">
+                        <h3 class="chart-title">
+                            <i class="bi bi-pie-chart-fill me-2"></i>
+                            Distribución por Categoría
+                        </h3>
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="chart-card">
+                        <h3 class="chart-title">
+                            <i class="bi bi-bar-chart-fill me-2"></i>
+                            Comparativa Anual por Categoría
+                        </h3>
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-card">
+                        <h3 class="chart-title">
+                            <i class="bi bi-table me-2"></i>
+                            Datos Detallados
+                        </h3>
+                        <div class="table-responsive">
+                            <table class="table data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Año</th>
+                                        <th>Libros</th>
+                                        <th>Revistas</th>
+                                        <th>Bases de Datos</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTableBody">
+                                    <!-- Data will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary-custom btn-action" onclick="downloadExcel()">
+                                <i class="bi bi-download me-2"></i>
+                                Descargar Resumen Excel
+                            </button>
+                            <button class="btn btn-outline-primary btn-action" onclick="resetView()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Cargar Nuevo Archivo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let globalData = null;
+        let charts = {};
+
+        // Upload zone interactions
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const statsContainer = document.getElementById('statsContainer');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                alert('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 10MB.');
+                return;
+            }
+
+            uploadZone.style.display = 'none';
+            loadingSpinner.style.display = 'block';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    processExcelData(workbook);
+                } catch (error) {
+                    console.error('Error al procesar el archivo:', error);
+                    alert('Error al procesar el archivo. Por favor, verifica el formato.');
+                    resetView();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelData(workbook) {
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rawData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            // Extract data starting from row 2 (index 2) - skip header rows
+            const processedData = [];
+            
+            for (let i = 2; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (row[0] && !isNaN(row[0])) { // Check if first column is a year
+                    const year = parseInt(row[0]);
+                    const libros = parseAmount(row[1]);      // Columna B
+                    const revistas = parseAmount(row[2]);    // Columna C
+                    const bases = parseAmount(row[3]);       // Columna D
+                    
+                    processedData.push({
+                        year: year,
+                        libros: libros,
+                        revistas: revistas,
+                        bases: bases,
+                        total: libros + revistas + bases
+                    });
+                }
+            }
+
+            globalData = processedData;
+            displayStatistics(processedData);
+            
+            loadingSpinner.style.display = 'none';
+            statsContainer.style.display = 'block';
+        }
+
+        function parseAmount(value) {
+            if (!value) return 0;
+            
+            // Convert to string and remove formatting
+            let str = String(value).replace(/[\$,\s]/g, '').replace(/\\/g, '');
+            
+            // Parse as float
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function displayStatistics(data) {
+            // Calculate totals
+            const totalLibros = data.reduce((sum, item) => sum + item.libros, 0);
+            const totalRevistas = data.reduce((sum, item) => sum + item.revistas, 0);
+            const totalBases = data.reduce((sum, item) => sum + item.bases, 0);
+            const totalGeneral = totalLibros + totalRevistas + totalBases;
+
+            // Update stat cards
+            document.getElementById('statLibros').textContent = formatCurrency(totalLibros);
+            document.getElementById('statRevistas').textContent = formatCurrency(totalRevistas);
+            document.getElementById('statBases').textContent = formatCurrency(totalBases);
+            document.getElementById('statTotal').textContent = formatCurrency(totalGeneral);
+
+            // Create charts
+            createLineChart(data);
+            createPieChart(totalLibros, totalRevistas, totalBases);
+            createBarChart(data);
+
+            // Fill data table
+            fillDataTable(data);
+        }
+
+        function createLineChart(data) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            if (charts.lineChart) charts.lineChart.destroy();
+            
+            charts.lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.year),
+                    datasets: [
+                        {
+                            label: 'Libros',
+                            data: data.map(d => d.libros),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Revistas',
+                            data: data.map(d => d.revistas),
+                            borderColor: '#f5576c',
+                            backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Bases de Datos',
+                            data: data.map(d => d.bases),
+                            borderColor: '#00f2fe',
+                            backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000000).toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createPieChart(libros, revistas, bases) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            if (charts.pieChart) charts.pieChart.destroy();
+            
+            charts.pieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Libros', 'Revistas', 'Bases de Datos'],
+                    datasets: [{
+                        data: [libros, revistas, bases],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(0, 242, 254, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatCurrency(context.parsed) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createBarChart(data) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            
+            if (charts.barChart) charts.barChart.destroy();
+            
+            charts.barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.year),
+                    datasets: [
+                        {
+                            label: 'Libros',
+                            data: data.map(d => d.libros),
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                        },
+                        {
+                            label: 'Revistas',
+                            data: data.map(d => d.revistas),
+                            backgroundColor: 'rgba(245, 87, 108, 0.8)'
+                        },
+                        {
+                            label: 'Bases de Datos',
+                            data: data.map(d => d.bases),
+                            backgroundColor: 'rgba(0, 242, 254, 0.8)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: false
+                        },
+                        y: {
+                            beginAtZero: true,
+                            stacked: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000000).toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function fillDataTable(data) {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.year}</td>
+                    <td>${formatCurrency(item.libros)}</td>
+                    <td>${formatCurrency(item.revistas)}</td>
+                    <td>${formatCurrency(item.bases)}</td>
+                    <td><strong>${formatCurrency(item.total)}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString('es-CO', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+
+        function resetView() {
+            uploadZone.style.display = 'block';
+            loadingSpinner.style.display = 'none';
+            statsContainer.style.display = 'none';
+            fileInput.value = '';
+            globalData = null;
+            
+            // Destroy all charts
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            charts = {};
+        }
+
+        function downloadExcel() {
+            if (!globalData) return;
+
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+
+            // Prepare data for export
+            const exportData = [
+                ['Año', 'Libros', 'Revistas', 'Bases de Datos', 'Total']
+            ];
+
+            globalData.forEach(item => {
+                exportData.push([
+                    item.year,
+                    item.libros,
+                    item.revistas,
+                    item.bases,
+                    item.total
+                ]);
+            });
+
+            // Add totals row
+            const totalLibros = globalData.reduce((sum, item) => sum + item.libros, 0);
+            const totalRevistas = globalData.reduce((sum, item) => sum + item.revistas, 0);
+            const totalBases = globalData.reduce((sum, item) => sum + item.bases, 0);
+            const totalGeneral = totalLibros + totalRevistas + totalBases;
+
+            exportData.push([
+                'TOTAL',
+                totalLibros,
+                totalRevistas,
+                totalBases,
+                totalGeneral
+            ]);
+
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Inversión Institucional');
+
+            // Generate filename with current date
+            const today = new Date();
+            const filename = `Inversion_Institucional_${today.getFullYear()}_${String(today.getMonth() + 1).padStart(2, '0')}_${String(today.getDate()).padStart(2, '0')}.xlsx`;
+
+            // Download file
+            XLSX.writeFile(wb, filename);
+        }
+    </script>
+</body>
+</html>

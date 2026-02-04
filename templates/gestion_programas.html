@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Programas Académicos - ESTADANIBLIO</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #00778B 0%, #3c6279 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .main-container {
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .header-section {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #e9ecef;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-add {
+            background: linear-gradient(45deg, #6610f2, #7952b3);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 16, 242, 0.4);
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #6610f2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 3rem;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #6610f2;
+            box-shadow: 0 0 0 0.2rem rgba(102, 16, 242, 0.25);
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .programs-table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
+        .programs-table thead {
+            background: linear-gradient(135deg, #6610f2, #7952b3);
+            color: white;
+        }
+        
+        .programs-table thead th {
+            padding: 1rem;
+            font-weight: 600;
+            border: none;
+            white-space: nowrap;
+        }
+        
+        .programs-table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .programs-table tbody tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .badge-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .badge-active {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .badge-inactive {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-action {
+            padding: 0.4rem 1rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            margin: 0 0.2rem;
+        }
+        
+        .btn-toggle {
+            background: linear-gradient(45deg, #17a2b8, #20c997);
+            color: white;
+        }
+        
+        .btn-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #6610f2, #7952b3);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+            padding: 1.5rem 2rem;
+        }
+        
+        .modal-title {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: #6610f2;
+            box-shadow: 0 0 0 0.2rem rgba(102, 16, 242, 0.25);
+        }
+        
+        .btn-modal-action {
+            border-radius: 20px;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .alert-custom {
+            border-radius: 15px;
+            border: none;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-custom i {
+            font-size: 1.5rem;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .info-box i {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                ESTADANIBLIO
+            </a>
+            <div class="ms-auto">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-back">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="header-title">
+                <i class="bi bi-mortarboard-fill"></i>
+                Gestión de Programas Académicos
+            </h1>
+            <p class="header-subtitle">
+                Administración centralizada de programas académicos
+            </p>
+        </div>
+
+        <!-- Mensaje de error/éxito -->
+        {% if error %}
+        <div class="alert alert-danger alert-custom">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Content Card -->
+        <div class="content-card">
+            <!-- Header con botón agregar -->
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="bi bi-list-ul"></i>
+                    Lista de Programas
+                </h2>
+                <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addProgramModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Agregar Programa
+                </button>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPrograms">{{ programas|length if programas else 0 }}</div>
+                    <div class="stat-label">Total de Programas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activePrograms">
+                        {{ programas|selectattr('activo', 'equalto', 1)|list|length if programas else 0 }}
+                    </div>
+                    <div class="stat-label">Programas Activos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="inactivePrograms">
+                        {{ programas|selectattr('activo', 'equalto', 0)|list|length if programas else 0 }}
+                    </div>
+                    <div class="stat-label">Programas Inactivos</div>
+                </div>
+            </div>
+
+            <!-- Búsqueda -->
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar programa por nombre...">
+            </div>
+
+            <!-- Tabla de programas -->
+            <div class="table-container">
+                {% if programas and programas|length > 0 %}
+                <table class="table programs-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Programa</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Última Modificación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="programsTableBody">
+                        {% for programa in programas %}
+                        <tr data-program-id="{{ programa[0] }}" 
+                            data-nombre="{{ programa[1] }}">
+                            <td>{{ programa[1] }}</td>
+                            <td>
+                                {% if programa[2] == 1 %}
+                                <span class="badge-status badge-active">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Activo
+                                </span>
+                                {% else %}
+                                <span class="badge-status badge-inactive">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Inactivo
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ programa[3][:10] if programa[3] else 'N/A' }}</td>
+                            <td>{{ programa[4][:10] if programa[4] else 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-action btn-toggle" 
+                                        onclick="toggleProgram({{ programa[0] }}, {{ programa[2] }})">
+                                    {% if programa[2] == 1 %}
+                                    <i class="bi bi-toggle-on me-1"></i>
+                                    Deshabilitar
+                                    {% else %}
+                                    <i class="bi bi-toggle-off me-1"></i>
+                                    Habilitar
+                                    {% endif %}
+                                </button>
+                                <button class="btn btn-action btn-delete" 
+                                        onclick="confirmDelete({{ programa[0] }}, '{{ programa[1] }}')">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No hay programas registrados</h4>
+                    <p>Agrega tu primer programa académico haciendo clic en el botón "Agregar Programa"</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar programa -->
+    <div class="modal fade" id="addProgramModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Agregar Nuevo Programa
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProgramForm">
+                        <div class="mb-3">
+                            <label for="programNombre" class="form-label">
+                                <i class="bi bi-card-text me-2"></i>
+                                Nombre del Programa
+                            </label>
+                            <input type="text" class="form-control" id="programNombre" 
+                                   placeholder="Ej: Ingeniería de Sistemas" required>
+                            
+                            <div class="info-box mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>
+                                    <strong>Ejemplos de nombres:</strong><br>
+                                    • Diseño Gráfico<br>
+                                    • Psicología<br>
+                                    • Administración de Empresas<br>
+                                    <br>
+                                    El sistema generará automáticamente un código interno basado en el nombre.
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="modalAlert" class="alert alert-dismissible fade" role="alert" style="display: none;">
+                        <span id="modalAlertMessage"></span>
+                        <button type="button" class="btn-close" onclick="hideModalAlert()"></button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modal-action" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-save btn-modal-action" onclick="saveProgram()">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Guardar Programa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Función para buscar en la tabla
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#programsTableBody tr');
+            
+            rows.forEach(row => {
+                const nombre = row.getAttribute('data-nombre').toLowerCase();
+                
+                if (nombre.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Función para guardar un nuevo programa
+        async function saveProgram() {
+            
+            const nombre = document.getElementById('programNombre').value.trim();
+            
+            if (!nombre) {
+                showModalAlert('Por favor ingresa el nombre del programa', 'danger');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/programas/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ nombre })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Cerrar modal y recargar página
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addProgramModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    showModalAlert(data.error || 'Error al agregar programa', 'danger');
+                }
+            } catch (error) {
+                showModalAlert('Error de conexión: ' + error.message, 'danger');
+            }
+        }
+
+        // Función para alternar estado del programa
+        async function toggleProgram(programId, currentStatus) {
+            const action = currentStatus === 1 ? 'deshabilitar' : 'habilitar';
+            
+            if (!confirm(`¿Estás seguro de que deseas ${action} este programa?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/programas/toggle/${programId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo cambiar el estado'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Función para confirmar eliminación
+        async function confirmDelete(programId, programName) {
+            if (!confirm(`¿Estás seguro de que deseas ELIMINAR el programa "${programName}"?\n\nEsta acción no se puede deshacer. Si el programa tiene registros asociados, no podrá eliminarse.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/programas/eliminar/${programId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo eliminar el programa'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar alerta en modal
+        function showModalAlert(message, type) {
+            const alertDiv = document.getElementById('modalAlert');
+            const alertMessage = document.getElementById('modalAlertMessage');
+            
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertMessage.textContent = message;
+            alertDiv.style.display = 'block';
+        }
+
+        // Ocultar alerta en modal
+        function hideModalAlert() {
+            const alertDiv = document.getElementById('modalAlert');
+            alertDiv.style.display = 'none';
+        }
+
+        // Limpiar formulario al cerrar modal
+        document.getElementById('addProgramModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('addProgramForm').reset();
+            hideModalAlert();
+        });
+    </script>
+</body>
+</html>

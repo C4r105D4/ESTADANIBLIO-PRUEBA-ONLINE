@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - ESTADANIBLIO</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        /* ===== FONDO ANIMADO ===== */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00778B 0%, #3c6279 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Partículas de fondo animadas */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+        
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        .error-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            padding: 3rem 2rem;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            margin: 2rem;
+            position: relative;
+            z-index: 10;
+            animation: slideIn 0.6s ease-out;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* ===== ICONO DE ERROR ===== */
+        .error-icon-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+        
+        .error-icon {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            animation: pulse 2s infinite ease-in-out;
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.4);
+            position: relative;
+        }
+        
+        .error-icon::before {
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border: 3px solid rgba(255, 107, 107, 0.3);
+            border-radius: 50%;
+            animation: ripple 2s infinite ease-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+        
+        .error-icon i {
+            font-size: 4.5rem;
+            color: white;
+            animation: shake 0.8s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* ===== CONTENIDO DEL ERROR ===== */
+        .error-code {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff6b6b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .error-title {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        
+        .error-message {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* ===== DETALLES DEL ERROR ===== */
+        .error-details {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #ff6b6b;
+            text-align: left;
+        }
+        
+        .error-details-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .error-details p {
+            margin: 0.5rem 0;
+            color: #495057;
+            font-size: 0.95rem;
+            padding-left: 1.5rem;
+        }
+        
+        .error-details i {
+            color: #ff6b6b;
+        }
+        
+        /* ===== BOTONES DE ACCIÓN ===== */
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn-action {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-action:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary-action {
+            background: linear-gradient(45deg, #00778B, #17a2b8);
+            color: white;
+        }
+        
+        .btn-primary-action:hover {
+            color: white;
+        }
+        
+        .btn-secondary-action {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+        
+        .btn-secondary-action:hover {
+            color: white;
+        }
+        
+        /* ===== SUGERENCIAS ===== */
+        .suggestions {
+            background: rgba(23, 162, 184, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(23, 162, 184, 0.2);
+        }
+        
+        .suggestions-title {
+            font-weight: 600;
+            color: #00778B;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .suggestions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        
+        .suggestions li {
+            padding: 0.5rem 0;
+            color: #495057;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .suggestions li i {
+            color: #17a2b8;
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+        }
+        
+        /* ===== FOOTER ===== */
+        .error-footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .error-footer a {
+            color: #00778B;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .error-footer a:hover {
+            color: #17a2b8;
+            text-decoration: underline;
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .error-icon {
+                width: 110px;
+                height: 110px;
+            }
+            
+            .error-icon i {
+                font-size: 3.5rem;
+            }
+            
+            .error-title {
+                font-size: 1.8rem;
+            }
+            
+            .error-message {
+                font-size: 1rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+            }
+            
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Animación de fondo -->
+    <div class="background-animation">
+        <!-- Generar partículas con JavaScript -->
+    </div>
+
+    <!-- Contenedor del error -->
+    <div class="error-container">
+        
+        <!-- Icono del error -->
+        <div class="error-icon-wrapper">
+            <div class="error-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+        </div>
+        
+        <!-- Código del error (dinámico) -->
+        <div class="error-code">
+            {{ error_code if error_code else 'Error' }}
+        </div>
+        
+        <!-- Título del error -->
+        <h1 class="error-title">
+            {{ error_title if error_title else '¡Ups! Algo salió mal' }}
+        </h1>
+        
+        <!-- Mensaje del error -->
+        <p class="error-message">
+            {{ error_message if error_message else 'Ha ocurrido un error inesperado. Por favor, intenta nuevamente o contacta al administrador del sistema.' }}
+        </p>
+        
+        <!-- Detalles del error (si existen) -->
+        {% if error_details or error %}
+        <div class="error-details">
+            <div class="error-details-title">
+                <i class="bi bi-info-circle-fill"></i>
+                Detalles del error
+            </div>
+            <p>{{ error_details if error_details else error }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Sugerencias -->
+        <div class="suggestions">
+            <div class="suggestions-title">
+                <i class="bi bi-lightbulb-fill"></i>
+                ¿Qué puedes hacer?
+            </div>
+            <ul>
+                <li>
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Recarga la página e intenta nuevamente</span>
+                </li>
+                <li>
+                    <i class="bi bi-house-door"></i>
+                    <span>Regresa al inicio y navega desde allí</span>
+                </li>
+                <li>
+                    <i class="bi bi-clock-history"></i>
+                    <span>Verifica que estás usando la URL correcta</span>
+                </li>
+                <li>
+                    <i class="bi bi-wifi"></i>
+                    <span>Comprueba tu conexión a internet</span>
+                </li>
+                <li>
+                    <i class="bi bi-person-badge"></i>
+                    <span>Si el problema persiste, contacta al equipo de soporte</span>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div class="error-actions">
+            <!-- Botón de recargar -->
+            <a href="javascript:location.reload()" class="btn btn-action btn-secondary-action">
+                <i class="bi bi-arrow-clockwise"></i>
+                Recargar página
+            </a>
+            
+            <!-- Botón de volver al inicio -->
+            {% if session.get("usuario") %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-action btn-primary-action">
+                    <i class="bi bi-house-fill"></i>
+                    Volver al inicio
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-action btn-primary-action">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Iniciar sesión
+                </a>
+            {% endif %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="error-footer">
+            <p class="mb-2">
+                <i class="bi bi-shield-check me-1"></i>
+                Sistema ESTADANIBLIO - DEREA
+            </p>
+            <p class="mb-0">
+                ¿Necesitas ayuda? 
+                <a href="mailto:soporte@amigo.edu.co">
+                    <i class="bi bi-envelope me-1"></i>
+                    Contacta a soporte
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ===== GENERAR PARTÍCULAS ANIMADAS =====
+        function createParticles() {
+            const container = document.querySelector('.background-animation');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Posición inicial aleatoria
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                
+                // Delay aleatorio para la animación
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                
+                // Duración aleatoria
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        // ===== ANIMACIÓN DE ENTRADA =====
+        window.addEventListener('load', function() {
+            createParticles();
+            
+            // Agregar efecto de aparición gradual a los elementos
+            const elements = document.querySelectorAll('.error-container > *');
+            elements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                element.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+        
+        // ===== REGISTRO DEL ERROR EN CONSOLA =====
+        {% if error or error_details %}
+        console.group('🔴 Error Details - ESTADANIBLIO');
+        console.error('Error Code: {{ error_code if error_code else "N/A" }}');
+        console.error('Error Title: {{ error_title if error_title else "Unknown Error" }}');
+        console.error('Error Message: {{ error_message if error_message else "No message provided" }}');
+        {% if error_details %}
+        console.error('Error Details: {{ error_details }}');
+        {% endif %}
+        {% if error %}
+        console.error('Additional Info: {{ error }}');
+        {% endif %}
+        console.error('Timestamp: ' + new Date().toISOString());
+        console.error('User Agent: ' + navigator.userAgent);
+        console.error('Current URL: ' + window.location.href);
+        console.groupEnd();
+        {% endif %}
+        
+        // ===== EFECTO HOVER EN SUGERENCIAS =====
+        document.querySelectorAll('.suggestions li').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+        
+        // ===== MENSAJE DE AYUDA EN CONSOLA =====
+        console.log('%c🔧 Sistema ESTADANIBLIO', 'color: #00778B; font-size: 16px; font-weight: bold;');
+        console.log('%cSi necesitas ayuda técnica, contacta a soporte@amigo.edu.co', 'color: #6c757d;');
+    </script>
+</body>
+</html>

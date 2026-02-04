@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas Avanzadas - ESTADANIBLIO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --warning-gradient: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            --danger-gradient: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: var(--primary-gradient) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .btn-nav {
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .main-container {
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.6s ease;
+        }
+        
+        .page-title {
+            font-size: 2.8rem;
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        
+        .filters-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            animation: fadeIn 0.6s ease;
+        }
+        
+        .filters-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .stats-overview {
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+        }
+        
+        .stat-card.primary::before { background: var(--primary-gradient); }
+        .stat-card.success::before { background: var(--success-gradient); }
+        .stat-card.warning::before { background: var(--warning-gradient); }
+        .stat-card.danger::before { background: var(--danger-gradient); }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon.primary { background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-icon.success { background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-icon.warning { background: var(--warning-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-icon.danger { background: var(--danger-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-icon {
+            font-size: 1.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .top-program-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .top-program-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .top-program-card.rank-1 { border-left-color: #FFD700; }
+        .top-program-card.rank-2 { border-left-color: #C0C0C0; }
+        .top-program-card.rank-3 { border-left-color: #CD7F32; }
+        .top-program-card.rank-4, .top-program-card.rank-5 { border-left-color: #667eea; }
+        
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 1rem;
+        }
+        
+        .rank-badge.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+        .rank-badge.rank-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); color: white; }
+        .rank-badge.rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+        .rank-badge.rank-4, .rank-badge.rank-5 { background: var(--primary-gradient); color: white; }
+        
+        .program-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.05rem;
+            flex: 1;
+        }
+        
+        .program-count {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .custom-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .custom-tabs .nav-link:hover {
+            color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        .custom-tabs .nav-link.active {
+            color: white;
+            background: var(--primary-gradient);
+        }
+        
+        .tab-content {
+            background: white;
+            border-radius: 0 15px 15px 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .chart-card, .filters-panel {
+                padding: 1.5rem;
+            }
+        }
+        
+        .alert-custom {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* ========== ESTILOS PARA BOTONES DE AÑOS INTERACTIVOS ========== */
+        .btn-year-filter {
+            background: white;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .btn-year-filter:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-year-filter.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-year-filter.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-year-filter i.bi-star-fill {
+            color: #ffc107;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        /* ================================================================ */
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Estadísticas Avanzadas
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('panel') }}" class="btn btn-light btn-nav btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Volver
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-nav btn-sm">
+                    <i class="bi bi-house me-1"></i>
+                    Inicio
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-nav btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>
+                    Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid main-container px-4">
+        
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="bi bi-bar-chart-line-fill me-3"></i>
+                Dashboard de Estadísticas
+            </h1>
+            <p class="page-subtitle">
+                Análisis completo de capacitaciones y asistencias
+            </p>
+        </div>
+
+        <!-- ========== INDICADOR DE VENTANA DE AÑOS (INTERACTIVO) ========== -->
+        {% if ventana_anos %}
+        <div class="alert alert-info d-flex align-items-center justify-content-between mb-4" role="alert" style="border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div class="d-flex align-items-center flex-grow-1">
+                <i class="bi bi-calendar-range me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong style="font-size: 1.05rem;">Ventana de Datos Activa</strong>
+                    <p class="mb-0 mt-1" style="font-size: 0.95rem;">
+                        Mostrando estadísticas de los últimos 5 años: 
+                        <span class="badge bg-primary px-3 py-2 ms-2">{{ ventana_anos.ano_inicio }} - {{ ventana_anos.ano_fin }}</span>
+                        {% if not filtros.fecha_inicio and not filtros.fecha_fin %}
+                            <small class="ms-2 text-muted fst-italic">(Filtro automático activo)</small>
+                        {% endif %}
+                    </p>
+                    <small class="text-muted d-block mt-1">
+                        <i class="bi bi-hand-index me-1"></i>
+                        Haz clic en un año para filtrar
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Badges de años INTERACTIVOS -->
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                <!-- Botón "Todos los años" -->
+                <button type="button" 
+                        class="btn-year-filter {% if not filtros.fecha_inicio and not filtros.fecha_fin %}active{% endif %}"
+                        onclick="filtrarPorAnio('todos')"
+                        title="Mostrar todos los años disponibles">
+                    <i class="bi bi-calendar-week me-1"></i>
+                    Todos
+                </button>
+                
+                <!-- Botones de años individuales -->
+                {% for ano in ventana_anos.anos %}
+                <button type="button" 
+                        class="btn-year-filter {% if filtros.fecha_inicio == ano|string + '-01-01' and filtros.fecha_fin == ano|string + '-12-31' %}active{% endif %}"
+                        onclick="filtrarPorAnio({{ ano }})"
+                        title="Filtrar solo el año {{ ano }}">
+                    {{ ano }}
+                    {% if ano == ventana_anos.ano_fin %}
+                    <i class="bi bi-star-fill ms-1" style="font-size: 0.7rem;"></i>
+                    {% endif %}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <!-- ================================================== -->
+
+        {% if error %}
+        <div class="alert alert-danger alert-custom" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if mensaje %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>{{ mensaje }}</h3>
+            <p>Agrega registros de asistencias para ver las estadísticas</p>
+        </div>
+        {% else %}
+
+        <div class="filters-panel">
+            <div class="filters-title">
+                <i class="bi bi-funnel-fill"></i>
+                Filtros de Búsqueda
+            </div>
+            <form method="GET" action="{{ url_for('estadisticas') }}">
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Evento
+                        </label>
+                        <select name="evento" class="form-select">
+                            <option value="">Todos los eventos</option>
+                            {% for evento in filtros.eventos_lista %}
+                            <option value="{{ evento }}" {% if filtros.evento == evento %}selected{% endif %}>
+                                {{ evento }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-mortarboard me-1"></i>
+                            Programa
+                        </label>
+                        <select name="programa" class="form-select">
+                            <option value="">Todos los programas</option>
+                            {% for programa in filtros.programas_lista %}
+                            <option value="{{ programa }}" {% if filtros.programa == programa %}selected{% endif %}>
+                                {{ programa }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-2">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-calendar-range me-1"></i>
+                            Fecha Inicio
+                        </label>
+                        <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio }}">
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-2">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Fecha Fin
+                        </label>
+                        <input type="date" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin }}">
+                    </div>
+                    
+                    <div class="col-lg-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-search me-1"></i>
+                            Filtrar
+                        </button>
+                        <a href="{{ url_for('estadisticas') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="stats-overview">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card primary">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-value">{{ total_asistencias }}</div>
+                        <div class="stat-label">Total Asistencias</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card success">
+                        <div class="stat-icon success">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </div>
+                        <div class="stat-value">{{ total_eventos }}</div>
+                        <div class="stat-label">Eventos Realizados</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card warning">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div class="stat-value">{{ total_programas }}</div>
+                        <div class="stat-label">Programas Participantes</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card danger">
+                        <div class="stat-icon danger">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div class="stat-value">{{ promedio_evaluaciones }}</div>
+                        <div class="stat-label">Promedio Evaluaciones</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs custom-tabs mb-3" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab">
+                    <i class="bi bi-graph-up me-2"></i>Vista General
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cruzado-tab">
+                    <i class="bi bi-diagram-3-fill me-2"></i>Análisis Cruzado
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tendencias-tab">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Tendencias
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            
+            <div class="tab-pane fade show active" id="general-tab">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-bar-chart-fill chart-icon"></i>
+                                    Asistencias por Evento
+                                </div>
+                            </div>
+                            <canvas id="chartEventos"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-pie-chart-fill chart-icon"></i>
+                                    Asistencias por Programa
+                                </div>
+                            </div>
+                            <canvas id="chartProgramas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="cruzado-tab">
+                <h4 class="mb-4">
+                    <i class="bi bi-table me-2"></i>
+                    Análisis Cruzado: Programa x Evento
+                </h4>
+                <p class="text-muted mb-4">
+                    Esta tabla muestra cuántos estudiantes de cada programa asistieron a cada capacitación
+                </p>
+                
+                {% if matriz_cruzada %}
+                <div class="row">
+                    {% for evento, programas in matriz_cruzada.items() %}
+                    <div class="col-12 mb-4">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-calendar-event-fill me-2"></i>
+                                    {{ evento }}
+                                </div>
+                                <span class="badge bg-primary">
+                                    Total: {{ programas.values()|sum }} asistentes
+                                </span>
+                            </div>
+                            
+                            {% if evento in top_por_evento %}
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-3 text-muted">
+                                        <i class="bi bi-trophy-fill me-2"></i>
+                                        Top 5 Programas
+                                    </h6>
+                                    {% for item in top_por_evento[evento] %}
+                                    <div class="top-program-card rank-{{ item.ranking }}">
+                                        <div class="d-flex align-items-center">
+                                            <span class="rank-badge rank-{{ item.ranking }}">
+                                                {{ item.ranking }}
+                                            </span>
+                                            <span class="program-name">{{ item.programa }}</span>
+                                            <span class="program-count">{{ item.total }}</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-3">
+                                <canvas id="chart-{{ loop.index }}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No hay datos suficientes para el análisis cruzado
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="tendencias-tab">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="bi bi-graph-up-arrow chart-icon"></i>
+                            Tendencia Mensual de Asistencias
+                        </div>
+                    </div>
+                    <canvas id="chartTendencia"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const colors = {
+            primary: '#667eea',
+            success: '#28a745',
+            warning: '#ffc107',
+            danger: '#dc3545',
+            info: '#17a2b8',
+            gradient: [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(108, 117, 125, 0.8)',
+                'rgba(255, 152, 0, 0.8)',
+                'rgba(156, 39, 176, 0.8)',
+                'rgba(233, 30, 99, 0.8)',
+                'rgba(0, 150, 136, 0.8)'
+            ]
+        };
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        }
+                    }
+                }
+            }
+        };
+
+        {% if not mensaje and not error %}
+        
+        new Chart(document.getElementById('chartEventos'), {
+            type: 'bar',
+            data: {
+                labels: {{ eventos_labels|tojson }},
+                datasets: [{
+                    label: 'Asistentes',
+                    data: {{ eventos_valores|tojson }},
+                    backgroundColor: colors.gradient,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                ...commonOptions,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('chartProgramas'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ programa_labels|tojson }},
+                datasets: [{
+                    data: {{ programa_valores|tojson }},
+                    backgroundColor: colors.gradient,
+                    borderWidth: 3,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                ...commonOptions,
+                cutout: '60%'
+            }
+        });
+
+        {% if meses_labels %}
+        new Chart(document.getElementById('chartTendencia'), {
+            type: 'line',
+            data: {
+                labels: {{ meses_labels|tojson }},
+                datasets: [{
+                    label: 'Asistencias',
+                    data: {{ meses_valores|tojson }},
+                    borderColor: colors.primary,
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: colors.primary,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+
+        {% if matriz_cruzada %}
+        {% for evento, programas in matriz_cruzada.items() %}
+        new Chart(document.getElementById('chart-{{ loop.index }}'), {
+            type: 'bar',
+            data: {
+                labels: {{ programas.keys()|list|tojson }},
+                datasets: [{
+                    label: 'Asistentes',
+                    data: {{ programas.values()|list|tojson }},
+                    backgroundColor: colors.gradient.slice(0, {{ programas|length }}),
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        {% endfor %}
+        {% endif %}
+
+        {% endif %}
+    </script>
+
+    <!-- ========== JAVASCRIPT PARA FILTRADO POR AÑO ========== -->
+    <script>
+        /**
+         * Función para filtrar estadísticas por año
+         * @param {number|string} ano - Año a filtrar o 'todos' para mostrar todos
+         */
+        function filtrarPorAnio(ano) {
+            // Obtener la URL actual
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            
+            if (ano === 'todos') {
+                // Quitar filtros de fecha para mostrar todos los años de la ventana
+                params.delete('fecha_inicio');
+                params.delete('fecha_fin');
+            } else {
+                // Establecer filtros para el año específico
+                const fechaInicio = ano + '-01-01';
+                const fechaFin = ano + '-12-31';
+                
+                params.set('fecha_inicio', fechaInicio);
+                params.set('fecha_fin', fechaFin);
+            }
+            
+            // Mantener otros filtros (evento, programa)
+            // Redirigir a la nueva URL con los parámetros actualizados
+            window.location.href = url.pathname + '?' + params.toString();
+        }
+        
+        // Agregar efecto visual al hacer clic en los botones
+        document.addEventListener('DOMContentLoaded', function() {
+            const yearButtons = document.querySelectorAll('.btn-year-filter');
+            
+            yearButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Feedback visual inmediato
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        });
+    </script>
+    <!-- ====================================================== -->
+</body>
+</html>

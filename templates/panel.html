@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Asistencias - Biblioteca</title>
+    
+    <!-- Bootstrap CSS - Framework para diseño responsivo -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons - Librería de iconos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- DataTables CSS con estilos de Bootstrap 5 -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- DataTables Responsive CSS - Para tablas adaptables a móviles -->
+    <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- DataTables Buttons CSS - Para botones de exportación -->
+    <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        /* ===== ESTILOS GENERALES ===== */
+        
+        /* Fondo general del body con gradiente azul claro */
+        body {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* ===== BARRA DE NAVEGACIÓN ===== */
+        
+        /* Navbar con gradiente morado-azul y sombra */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilo del logo/marca en la navbar */
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        
+        /* Espaciado vertical del contenedor principal */
+        .main-container {
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* ===== TÍTULO DE LA PÁGINA ===== */
+        
+        /* Estilo del título principal con posición relativa para el pseudo-elemento */
+        .page-title {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        /* Línea decorativa debajo del título */
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        /* ===== TARJETAS DE ESTADÍSTICAS ===== */
+        
+        /* Contenedor de las tarjetas estadísticas */
+        .stats-cards {
+            margin-bottom: 2rem;
+        }
+        
+        /* Estilo individual de cada tarjeta estadística */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease; /* Transición suave para animaciones */
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Línea superior decorativa de las tarjetas */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        /* Efecto hover de las tarjetas - se elevan */
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        /* Iconos de las estadísticas con gradiente como color */
+        .stat-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* ===== CONTENEDOR DE LA TABLA ===== */
+        
+        /* Contenedor principal de la tabla con sombra y bordes redondeados */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        /* Encabezado de la tabla con gradiente */
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+        
+        /* Celdas del encabezado de la tabla */
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 1rem 0.75rem;
+        }
+        
+        /* ===== FILTROS DE COLUMNA ===== */
+        
+        /* Inputs de filtrado por columna */
+        .column-filter {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: #333;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        /* Estilo del filtro cuando está enfocado */
+        .column-filter:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        /* Placeholder de los filtros */
+        .column-filter::placeholder {
+            color: rgba(0,0,0,0.6);
+        }
+        
+        /* ===== FILAS DE LA TABLA ===== */
+        
+        /* Transición suave en las filas al hacer hover */
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        /* Efecto hover en filas - cambian de color y se agrandan ligeramente */
+        .table tbody tr:hover {
+            background-color: #f8f9ff !important;
+            transform: scale(1.01);
+        }
+        
+        /* ===== BOTONES DE ACCIÓN ===== */
+        
+        /* Contenedor de botones de acción con flexbox */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        /* Estilo base para botones personalizados */
+        .btn-custom {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Efecto hover en botones - se elevan */
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* Botón de exportar - gradiente turquesa a verde */
+        .btn-export {
+            background: linear-gradient(45deg, #17a2b8, #20c997);
+            color: white;
+        }
+        
+        /* Botón de registrar - gradiente verde */
+        .btn-register {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        /* Botón de cargar Excel - gradiente azul a violeta */
+        .btn-upload {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        /* Botón de estadísticas - gradiente naranja a amarillo */
+        .btn-stats {
+            background: linear-gradient(45deg, #fd7e14, #ffc107);
+            color: white;
+        }
+        
+        /* Botón de cerrar sesión - gradiente rojo a naranja */
+        .btn-logout {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            color: white;
+        }
+        
+        /* ===== INFORMACIÓN DEL USUARIO ===== */
+        
+        /* Contenedor de información del usuario en la navbar */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        /* ===== ALERTAS ===== */
+        
+        /* Estilo personalizado para alertas */
+        .alert-custom {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* ===== OVERLAY DE CARGA ===== */
+        
+        /* Capa de carga que cubre toda la pantalla */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none; /* Oculto por defecto */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        /* Spinner de carga animado */
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Animación de rotación del spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* ===== ESTILOS DE DATATABLES ===== */
+        
+        /* Espaciado de elementos de DataTables */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin: 1rem 0;
+        }
+        
+        /* Estilo del botón de página actual en la paginación */
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: linear-gradient(45deg, #667eea, #764ba2) !important;
+            border-color: transparent !important;
+            color: white !important;
+            border-radius: 8px;
+        }
+        
+        /* ===== RESPONSIVE - PANTALLAS MÓVILES ===== */
+        
+        /* Ajustes para pantallas menores a 768px */
+        @media (max-width: 768px) {
+            /* Centrar botones de acción en móviles */
+            .action-buttons {
+                justify-content: center;
+            }
+            
+            /* Reducir tamaño de fuente en tabla para móviles */
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+            
+            /* Reducir tamaño de filtros en móviles */
+            .column-filter {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== OVERLAY DE CARGA ===== -->
+    <!-- Muestra un spinner mientras se cargan los datos -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <div class="loading-spinner"></div>
+            <p class="mt-3 text-muted">Cargando datos...</p>
+        </div>
+    </div>
+
+    <!-- ===== BARRA DE NAVEGACIÓN ===== -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <!-- Logo y nombre del sistema -->
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-book-fill me-2"></i>
+                Panel
+            </a>
+            
+            <!-- Botón de menú para móviles -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Contenido colapsable de la navbar -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+                    <!-- Mostrar solo si hay usuario en sesión -->
+                    {% if session.get("usuario") %}
+                        <!-- Información del usuario logueado -->
+                        <div class="user-info">
+                            <i class="bi bi-person-circle"></i>
+                            <span>{{ session["usuario"] }}</span>
+                        </div>
+                        
+                        <!-- Botón para volver al inicio -->
+                        <a class="btn btn-light btn-sm rounded-pill" href="{{ url_for('dashboard') }}" title="Volver al inicio">
+                            <i class="bi bi-house me-1"></i>
+                            <span class="d-none d-md-inline">Inicio</span>
+                        </a>
+
+                        <!-- Botón para ver estadísticas -->
+                        <a class="btn btn-stats btn-sm" href="{{ url_for('estadisticas') }}" title="Ver estadísticas">
+                            <i class="bi bi-graph-up me-1"></i>
+                            <span class="d-none d-md-inline">Estadísticas</span>
+                        </a>
+                        
+                        <!-- Botón para cerrar sesión -->
+                        <a class="btn btn-logout btn-sm" href="{{ url_for('logout') }}" title="Cerrar sesión">
+                            <i class="bi bi-box-arrow-right me-1"></i>
+                            <span class="d-none d-md-inline">Salir</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== CONTENEDOR PRINCIPAL ===== -->
+    <div class="container-fluid main-container">
+        
+        <!-- ===== TÍTULO DE LA PÁGINA ===== -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="page-title">
+                    <i class="bi bi-table me-2"></i>
+                    Panel de Asistencias
+                </h1>
+            </div>
+        </div>
+
+        <!-- ===== TARJETAS DE ESTADÍSTICAS ===== -->
+        <div class="row stats-cards">
+            <!-- Tarjeta 1: Total de Registros -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-card p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <!-- Contador que se actualiza con filtros -->
+                            <h3 class="mb-0" id="totalRegistros">{{ datos|length }}</h3>
+                            <p class="text-muted mb-0">Total Registros</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta 2: Eventos Únicos -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-card p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div>
+                            <!-- Calculado por JavaScript -->
+                            <h3 class="mb-0" id="totalEventos">0</h3>
+                            <p class="text-muted mb-0">Eventos Únicos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta 3: Programas -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-card p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div>
+                            <!-- Calculado por JavaScript -->
+                            <h3 class="mb-0" id="totalProgramas">0</h3>
+                            <p class="text-muted mb-0">Programas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarjeta 4: Sedes -->
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-card p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <div>
+                            <!-- Calculado por JavaScript -->
+                            <h3 class="mb-0" id="totalSedes">0</h3>
+                            <p class="text-muted mb-0">Sedes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MENSAJE DE ERROR ===== -->
+        <!-- Se muestra solo si existe un error desde el backend -->
+        {% if error %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-danger alert-custom d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>{{ error }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ===== MENSAJE DE ÉXITO ===== -->
+        <!-- Se muestra solo si existe un mensaje de éxito desde el backend -->
+        {% if success %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success alert-custom d-flex align-items-center" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <div>{{ success }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ===== TABLA DE DATOS ===== -->
+        <div class="row">
+            <div class="col-12">
+                <div class="table-container">
+                    <!-- Encabezado de la tabla -->
+                    <div class="table-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">
+                                <i class="bi bi-list-ul me-2"></i>
+                                Registro de Asistencias
+                            </h4>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="opacity-75">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Filtros disponibles por columna
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla responsive -->
+                    <div class="table-responsive p-0">
+                        <table class="table table-hover align-middle mb-0" id="tablaAsistencias">
+                            <thead>
+                                <!-- Fila 1: Encabezados de columnas -->
+                                <tr>
+                                    <th><i class="bi bi-calendar-event me-1"></i>Nombre del Evento</th>
+                                    <th><i class="bi bi-person-badge me-1"></i>Dictado por</th>
+                                    <th><i class="bi bi-person-workspace me-1"></i>Docente Acompañante</th>
+                                    <th><i class="bi bi-mortarboard me-1"></i>Docente adscrito al programa académico</th>
+                                    <th><i class="bi bi-card-text me-1"></i>Número de Identificación del estudiante</th>
+                                    <th><i class="bi bi-person me-1"></i>Nombre Completo</th>
+                                    <th><i class="bi bi-book me-1"></i>Programa académico del Estudiante</th>
+                                    <th><i class="bi bi-laptop me-1"></i>Modalidad (Presencial, Distancia, Virtual)</th>
+                                    <th><i class="bi bi-people me-1"></i>Tipo de Asistente</th>
+                                    <th><i class="bi bi-geo-alt me-1"></i>Sede</th>
+                                </tr>
+                                <!-- Fila 2: Inputs de filtrado por columna -->
+                                <tr class="bg-light">
+                                    <!-- Loop para crear 10 inputs de filtro (uno por columna) -->
+                                    {% for i in range(10) %}
+                                    <th>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filtrar..." 
+                                            class="column-filter form-control form-control-sm"
+                                            title="Filtrar por esta columna"
+                                        >
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Loop para mostrar cada fila de datos -->
+                                {% for fila in datos %}
+                                <tr>
+                                    <!-- Loop para mostrar cada celda de la fila -->
+                                    {% for celda in fila %}
+                                    <td class="text-truncate" style="max-width: 200px;" title="{{ celda }}">{{ celda }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% else %}
+                                <!-- Mensaje cuando no hay datos -->
+                                <tr>
+                                    <td colspan="10" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox display-1 d-block mb-3 opacity-25"></i>
+                                        <h5>No hay datos disponibles</h5>
+                                        <p>Registra la primera asistencia para comenzar.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== BOTONES DE ACCIÓN ===== -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="action-buttons">
+                    <!-- Formulario de exportación -->
+                    <form id="exportForm" method="GET" action="{{ url_for('exportar') }}" class="d-inline">
+                        <!-- Inputs ocultos para enviar los filtros aplicados -->
+                        {% for i in range(10) %}
+                        <input type="hidden" name="col{{ i }}" id="col{{ i }}_input">
+                        {% endfor %}
+                        <button type="submit" class="btn btn-custom btn-export" id="exportBtn">
+                            <i class="bi bi-download me-2"></i>
+                            Exportar Excel
+                        </button>
+                    </form>
+                    
+                    <!-- Botón para registrar nueva asistencia -->
+                    <a href="{{ url_for('formulario') }}" class="btn btn-custom btn-register">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Registrar Asistencia
+                    </a>
+                    
+                    <!-- Botón para cargar Excel -->
+                    <button type="button" class="btn btn-custom btn-upload" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                        Cargar Excel
+                    </button>
+                    
+                    <!-- Botón para mostrar código QR -->
+                    <button type="button" class="btn btn-custom btn-stats" data-bs-toggle="modal" data-bs-target="#qrModal">
+                        <i class="bi bi-qr-code me-2"></i>
+                        Código QR
+                    </button>
+                    
+                    <!-- Botón para limpiar todos los filtros -->
+                    <button type="button" class="btn btn-outline-secondary btn-custom" id="clearFilters">
+                        <i class="bi bi-funnel me-2"></i>
+                        Limpiar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE CÓDIGO QR ===== -->
+    <!-- Modal que muestra el código QR del formulario -->
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <!-- Encabezado del modal -->
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-qr-code me-2"></i>
+                        Código QR del Formulario
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <!-- Cuerpo del modal con imagen QR -->
+                <div class="modal-body text-center p-4">
+                    <p class="text-muted mb-4">Escanea este código QR para acceder al formulario de registro desde tu celular:</p>
+                    <img src="{{ url_for('qr_formulario') }}" alt="QR del Formulario" class="img-fluid rounded shadow" style="max-width: 250px;">
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            El código QR dirige al formulario de registro de asistencias
+                        </small>
+                    </div>
+                </div>
+                <!-- Pie del modal -->
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE CARGUE DE EXCEL ===== -->
+    <!-- Modal para cargar archivo Excel con asistencias -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <!-- Encabezado del modal -->
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                        Cargar Asistencias desde Excel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <!-- Cuerpo del modal -->
+                <div class="modal-body p-4">
+                    <!-- Información sobre la estructura del archivo -->
+                    <div class="alert alert-info d-flex align-items-start mb-4">
+                        <i class="bi bi-info-circle-fill me-2 mt-1" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <strong>Estructura del archivo Excel:</strong>
+                            <p class="mb-2 mt-2">El archivo debe contener las siguientes columnas en este orden:</p>
+                            <ul class="mb-0 small">
+                                <li><strong>nombre_evento</strong>: Nombre del evento o capacitación</li>
+                                <li><strong>dictado_por</strong>: Persona que dicta la capacitación</li>
+                                <li><strong>docente</strong>: Docente acompañante</li>
+                                <li><strong>programa_docente</strong>: Programa académico del docente</li>
+                                <li><strong>numero_identificacion</strong>: Número de identificación del estudiante</li>
+                                <li><strong>nombre_completo</strong>: Nombre completo del estudiante</li>
+                                <li><strong>programa_estudiante</strong>: Programa académico del estudiante</li>
+                                <li><strong>modalidad</strong>: Modalidad (Presencial, Distancia, Virtual)</li>
+                                <li><strong>tipo_asistente</strong>: Tipo de asistente</li>
+                                <li><strong>sede</strong>: Sede donde se realizó el evento</li>
+                                <li><strong>fecha_evento</strong>: Fecha del evento (formato: YYYY-MM-DD)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Zona de carga del archivo -->
+                    <form id="uploadForm" method="POST" action="{{ url_for('panel_cargar_excel') }}" enctype="multipart/form-data">
+                        <div class="upload-zone-panel mb-3" id="dropZone">
+                            <input type="file" 
+                                   name="file" 
+                                   id="fileInput" 
+                                   accept=".xlsx,.xls" 
+                                   class="d-none"
+                                   required>
+                            <div class="text-center py-4">
+                                <i class="bi bi-cloud-arrow-up upload-icon-panel mb-3"></i>
+                                <h5>Arrastra tu archivo aquí</h5>
+                                <p class="text-muted mb-3">o haz clic para seleccionar</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                                    <i class="bi bi-folder2-open me-2"></i>Seleccionar archivo Excel
+                                </button>
+                                <p class="text-muted small mt-3 mb-0">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>
+                                    Formatos soportados: .xlsx, .xls
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Nombre del archivo seleccionado -->
+                        <div id="fileInfo" class="alert alert-success d-none">
+                            <i class="bi bi-file-earmark-check me-2"></i>
+                            <strong>Archivo seleccionado:</strong> <span id="fileName"></span>
+                        </div>
+                    </form>
+
+                    <!-- Advertencia -->
+                    <div class="alert alert-warning d-flex align-items-start mt-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+                        <div>
+                            <strong>Importante:</strong> Los registros se agregarán a la base de datos existente sin borrar los datos actuales. 
+                            Los registros duplicados serán omitidos automáticamente.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pie del modal -->
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-upload" id="uploadBtn" disabled>
+                        <i class="bi bi-upload me-2"></i>Cargar datos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para la zona de carga en el modal */
+        .upload-zone-panel {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+        }
+        
+        .upload-zone-panel:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #e8f2ff 0%, #d8e9ff 100%);
+            transform: scale(1.02);
+        }
+        
+        .upload-zone-panel.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .upload-icon-panel {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+
+    <!-- ===== LIBRERÍAS JAVASCRIPT ===== -->
+    
+    <!-- jQuery - Librería para manipulación del DOM -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap JS - Framework para componentes interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS - Funcionalidad de tablas interactivas -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- DataTables Responsive - Tablas adaptables a móviles -->
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+    <script>
+        // Esperar a que el DOM esté completamente cargado
+        $(document).ready(function() {
+            
+            /* ===== FUNCIONES DE LOADING ===== */
+            
+            /**
+             * Muestra el overlay de carga con animación fade
+             */
+            function showLoading() {
+                $('#loadingOverlay').fadeIn(300);
+            }
+            
+            /**
+             * Oculta el overlay de carga con animación fade
+             */
+            function hideLoading() {
+                $('#loadingOverlay').fadeOut(300);
+            }
+
+            /* ===== NORMALIZACIÓN DE CADENAS ===== */
+            
+            /**
+             * Normaliza una cadena eliminando acentos y convirtiendo a minúsculas
+             * Permite búsquedas insensibles a mayúsculas y acentos
+             * @param {string} str - Cadena a normalizar
+             * @returns {string} - Cadena normalizada
+             */
+            function normalizeString(str) {
+                if (!str) return '';
+                return str
+                    .normalize("NFD") // Descompone caracteres acentuados
+                    .replace(/[̀-ͯ]/g, "") // Elimina marcas diacríticas
+                    .toLowerCase(); // Convierte a minúsculas
+            }
+
+            /* ===== SISTEMA DE NOTIFICACIONES TOAST ===== */
+            
+            /**
+             * Muestra una notificación toast temporal
+             * @param {string} message - Mensaje a mostrar
+             * @param {string} type - Tipo de notificación (success, error, info)
+             */
+            function showToast(message, type = 'info') {
+                // Determinar color según el tipo
+                const bgColor = type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary';
+                const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle';
+                
+                // HTML del toast
+                const toastHtml = `
+                    <div class="toast align-items-center text-white bg-${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-${icon} me-2"></i>
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+                
+                // Crear contenedor de toasts si no existe
+                let toastContainer = document.getElementById('toastContainer');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.id = 'toastContainer';
+                    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                    toastContainer.style.zIndex = '9999';
+                    document.body.appendChild(toastContainer);
+                }
+                
+                // Agregar toast al contenedor
+                const toastElement = $(toastHtml);
+                $(toastContainer).append(toastElement);
+                
+                // Mostrar toast
+                const toast = new bootstrap.Toast(toastElement[0]);
+                toast.show();
+                
+                // Eliminar elemento cuando se oculte
+                toastElement.on('hidden.bs.toast', function() {
+                    $(this).remove();
+                });
+            }
+
+            {% if datos and datos|length > 0 %}
+            /* ===== MODO: CON DATOS - INICIALIZAR DATATABLE ===== */
+            
+            /**
+             * Sobrescribe la función de búsqueda de DataTables
+             * para que ignore acentos y mayúsculas
+             */
+            $.fn.dataTable.ext.type.search.string = function(data) {
+                return !data ? '' : normalizeString(data);
+            };
+
+            /* ===== CÁLCULO DE ESTADÍSTICAS ===== */
+            
+            /**
+             * Calcula y actualiza las estadísticas mostradas en las tarjetas
+             * - Eventos únicos (columna 0)
+             * - Programas únicos (columna 6)
+             * - Sedes únicas (columna 9)
+             */
+            function calculateStats() {
+                // Obtener todos los datos de las filas de la tabla
+                const tableRows = table.rows().data().toArray();
+                
+                if (tableRows && tableRows.length > 0) {
+                    // Calcular eventos únicos de la columna 0
+                    const uniqueEvents = [...new Set(tableRows.map(row => row[0]))];
+                    $('#totalEventos').text(uniqueEvents.length);
+                    
+                    // Calcular programas únicos de la columna 6
+                    const uniquePrograms = [...new Set(tableRows.map(row => row[6]))];
+                    $('#totalProgramas').text(uniquePrograms.length);
+                    
+                    // Calcular sedes únicas de la columna 9
+                    const uniqueLocations = [...new Set(tableRows.map(row => row[9]))];
+                    $('#totalSedes').text(uniqueLocations.length);
+                } else {
+                    // Si no hay datos, mostrar 0 en todas las estadísticas
+                    $('#totalEventos').text('0');
+                    $('#totalProgramas').text('0');
+                    $('#totalSedes').text('0');
+                }
+            }
+
+            /* ===== INICIALIZACIÓN DE DATATABLE ===== */
+            
+            // Mostrar loading al inicio
+            showLoading();
+            
+            /**
+             * Inicializa DataTable con configuraciones personalizadas
+             * Incluye:
+             * - Paginación
+             * - Búsqueda
+             * - Ordenamiento
+             * - Responsividad
+             * - Traducción al español
+             */
+            var table = $('#tablaAsistencias').DataTable({
+                orderCellsTop: true,    // Permite ordenar desde la primera fila del thead
+                fixedHeader: true,       // Encabezado fijo al hacer scroll
+                responsive: true,        // Tabla adaptable a móviles
+                paging: true,           // Habilita paginación
+                pageLength: 25,         // 25 registros por página por defecto
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]], // Opciones de paginación
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>t<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // Estructura del DOM
+                language: {
+                    // Traducciones al español
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                    emptyTable: "No hay datos disponibles en la tabla",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
+                    search: "Buscar:",
+                    lengthMenu: "Mostrar _MENU_ registros"
+                },
+                initComplete: function() {
+                    // Callback cuando la tabla está completamente inicializada
+                    hideLoading();        // Ocultar overlay de carga
+                    calculateStats();     // Calcular estadísticas iniciales
+                }
+            });
+
+            /* ===== FILTRADO POR COLUMNA ===== */
+            
+            /**
+             * Event listener para los inputs de filtro por columna
+             * Filtra la tabla por el valor ingresado en cada columna
+             * La búsqueda es parcial y normalizada (sin acentos ni mayúsculas)
+             */
+            $('.column-filter').on('keyup change', function() {
+                var index = $(this).parent().index(); // Obtener índice de la columna
+                var searchTerm = this.value;           // Término de búsqueda
+                
+                // Aplicar filtro a la columna específica
+                table.column(index).search(searchTerm, false, true, true).draw();
+                
+                // Actualizar contador de registros visibles
+                const visibleRows = table.rows({ search: 'applied' }).count();
+                $('#totalRegistros').text(visibleRows);
+            });
+
+            /* ===== LIMPIAR FILTROS ===== */
+            
+            /**
+             * Event listener para el botón de limpiar filtros
+             * Resetea todos los filtros y búsquedas aplicadas
+             */
+            $('#clearFilters').on('click', function() {
+                $('.column-filter').val('');                           // Limpiar inputs
+                table.search('').columns().search('').draw();          // Limpiar búsquedas
+                $('#totalRegistros').text({{ datos|length }});         // Restaurar contador
+                
+                // Mostrar notificación
+                showToast('Filtros limpiados', 'success');
+            });
+
+            /* ===== EFECTOS HOVER EN FILAS ===== */
+            
+            /**
+             * Agrega clase 'table-active' al hacer hover sobre filas
+             * Mejora el feedback visual al usuario
+             */
+            $('#tablaAsistencias tbody').on('mouseenter', 'tr', function() {
+                $(this).addClass('table-active');
+            }).on('mouseleave', 'tr', function() {
+                $(this).removeClass('table-active');
+            });
+
+            {% else %}
+            /* ===== MODO: SIN DATOS - DESHABILITAR CONTROLES ===== */
+            
+            // Ocultar loading inmediatamente
+            hideLoading();
+            
+            // Deshabilitar filtros de columna
+            $('.column-filter').prop('disabled', true).attr('placeholder', 'Sin datos para filtrar');
+            
+            // Deshabilitar botones que requieren datos
+            $('#clearFilters').prop('disabled', true).addClass('disabled');
+            $('#exportBtn').prop('disabled', true).addClass('disabled');
+            
+            // Mostrar las estadísticas en 0
+            $('#totalEventos').text('0');
+            $('#totalProgramas').text('0');
+            $('#totalSedes').text('0');
+            
+            // Agregar tooltip informativo a los botones deshabilitados
+            $('#clearFilters').attr('title', 'No hay datos para filtrar');
+            $('#exportBtn').attr('title', 'No hay datos para exportar');
+            
+            console.log('Panel iniciado sin datos - Controles deshabilitados');
+            
+            {% endif %}
+
+            /* ===== EXPORTACIÓN A EXCEL ===== */
+            
+            /**
+             * Event listener para el formulario de exportación
+             * Captura los filtros aplicados y los envía al servidor
+             */
+            $('#exportForm').on('submit', function(e) {
+                e.preventDefault(); // Prevenir envío por defecto
+                
+                // Copiar valores de filtros a inputs ocultos
+                $('.column-filter').each(function(index) {
+                    $('#col'+index+'_input').val($(this).val());
+                });
+                
+                // Cambiar estado del botón durante la exportación
+                const $btn = $('#exportBtn');
+                const originalHtml = $btn.html();
+                $btn.html('<i class="bi bi-hourglass-split me-2"></i>Exportando...');
+                $btn.prop('disabled', true);
+                
+                // Enviar formulario
+                this.submit();
+                
+                // Restaurar botón después de 2 segundos
+                setTimeout(() => {
+                    $btn.html(originalHtml);
+                    $btn.prop('disabled', false);
+                    showToast('Exportación completada', 'success');
+                }, 2000);
+            });
+
+            /* ===== EXPORTACIÓN A EXCEL ===== */
+            
+            /**
+             * Event listener para el formulario de exportación
+             * Captura los filtros aplicados y los envía al servidor
+             */
+            $('#exportForm').on('submit', function(e) {
+                e.preventDefault(); // Prevenir envío por defecto
+                
+                // Copiar valores de filtros a inputs ocultos
+                $('.column-filter').each(function(index) {
+                    $('#col'+index+'_input').val($(this).val());
+                });
+                
+                // Cambiar estado del botón durante la exportación
+                const $btn = $('#exportBtn');
+                const originalHtml = $btn.html();
+                $btn.html('<i class="bi bi-hourglass-split me-2"></i>Exportando...');
+                $btn.prop('disabled', true);
+                
+                // Enviar formulario
+                this.submit();
+                
+                // Restaurar botón después de 2 segundos
+                setTimeout(() => {
+                    $btn.html(originalHtml);
+                    $btn.prop('disabled', false);
+                    showToast('Exportación completada', 'success');
+                }, 2000);
+            });
+
+            /* ===== MANEJO DE CARGUE DE ARCHIVOS EXCEL ===== */
+            /* Este código SIEMPRE debe ejecutarse, con o sin datos */
+            
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadForm = document.getElementById('uploadForm');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+
+            // Hacer clic en la zona de arrastre para abrir el selector de archivos
+            dropZone.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    fileInput.click();
+                }
+            });
+
+            // Manejar la selección de archivo
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            });
+
+            // Manejar arrastrar archivo sobre la zona
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            // Manejar soltar archivo en la zona
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                
+                const file = e.dataTransfer.files[0];
+                if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                    // Crear un objeto DataTransfer para asignar el archivo al input
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                    handleFile(file);
+                } else {
+                    showToast('Por favor selecciona un archivo Excel válido (.xlsx o .xls)', 'error');
+                }
+            });
+
+            // Procesar el archivo seleccionado
+            function handleFile(file) {
+                fileName.textContent = file.name;
+                fileInfo.classList.remove('d-none');
+                uploadBtn.disabled = false;
+            }
+
+            // Manejar el clic en el botón de cargar
+            uploadBtn.addEventListener('click', () => {
+                if (fileInput.files.length === 0) {
+                    showToast('Por favor selecciona un archivo', 'error');
+                    return;
+                }
+
+                // Confirmar la carga
+                if (confirm('¿Estás seguro de que deseas cargar este archivo? Los registros se agregarán a la base de datos existente.')) {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Cargando...';
+                    
+                    // Enviar el formulario
+                    uploadForm.submit();
+                }
+            });
+
+            // Resetear el modal al cerrarlo
+            document.getElementById('uploadModal').addEventListener('hidden.bs.modal', () => {
+                fileInput.value = '';
+                fileInfo.classList.add('d-none');
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Cargar datos';
+            });
+
+        });
+    </script>
+</body>
+</html>
