@@ -283,31 +283,6 @@
                 font-size: 0.9rem;
             }
             
-            /* Optimizar escala de rating para móvil */
-            .rating-scale {
-                gap: 0.35rem;
-            }
-            
-            .rating-label {
-                padding: 0.75rem 0.25rem;
-                min-height: 70px;
-                font-size: 0.85rem;
-            }
-            
-            .rating-value {
-                font-size: 1.3rem;
-            }
-            
-            .rating-text {
-                font-size: 0.65rem;
-                line-height: 1.1;
-            }
-            
-            .scale-legend {
-                font-size: 0.75rem;
-                padding: 0 0.25rem;
-            }
-            
             .btn-submit {
                 padding: 1rem 2rem;
                 font-size: 1rem;
@@ -320,8 +295,8 @@
             }
         }
         
-        /* Pantallas pequeñas (< 576px) - Escala vertical */
-        @media (max-width: 575px) {
+        /* Pantallas móviles (< 768px) - Escala vertical */
+        @media (max-width: 767px) {
             .rating-scale {
                 flex-direction: column;
                 gap: 0.5rem;
@@ -337,30 +312,40 @@
                 padding: 1rem;
                 min-height: auto;
                 text-align: left;
+                gap: 1rem;
             }
             
             .rating-value {
                 font-size: 1.5rem;
-                margin-right: 1rem;
+                margin-right: 0;
                 margin-bottom: 0;
-                min-width: 35px;
+                min-width: 40px;
+                flex-shrink: 0;
             }
             
             .rating-text {
-                font-size: 0.9rem;
+                font-size: 1rem;
                 text-align: left;
+                flex: 1;
             }
             
             .scale-legend {
                 display: none;
             }
-            
+        }
+        
+        /* Pantallas pequeñas (< 576px) */
+        @media (max-width: 575px) {
             .eval-header h1 {
                 font-size: 1.3rem;
             }
             
             .question-label {
                 font-size: 0.9rem;
+            }
+            
+            .rating-text {
+                font-size: 0.95rem;
             }
         }
         
