@@ -1,0 +1,26 @@
+# ESTADANIBLIO - Requirements
+# Sistema de Gestión Bibliotecaria
+
+# Framework Web
+Flask==3.0.0
+Werkzeug==3.0.1
+
+gunicorn==21.2.0
+
+# Base de datos y manejo de datos
+pandas==2.1.4
+openpyxl==3.1.2
+
+# Generación de códigos QR
+qrcode==7.4.2
+Pillow==10.1.0
+
+# Visualización y gráficos
+matplotlib==3.8.2
+
+# Utilidades adicionales
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Driver de PostgreSQL
+psycopg2-binary==2.9.9
