@@ -614,13 +614,13 @@
                                         </label>
                                         <select name="nombre_evento" id="nombre_evento" class="form-select" required>
                                             <option value="" disabled selected>Seleccione un evento</option>
-                                            <option value="Bases de datos" {% if request.form and request.form.get('nombre_evento') == 'Bases de datos' %}selected{% endif %}>Bases de datos</option>
-                                            <option value="Escritura académica" {% if request.form and request.form.get('nombre_evento') == 'Escritura académica' %}selected{% endif %}>Escritura académica</option>
+                                            <option value="Bases de Datos" {% if request.form and request.form.get('nombre_evento') == 'Bases de Datos' %}selected{% endif %}>Bases de Datos</option>
+                                            <option value="Escritura Académica" {% if request.form and request.form.get('nombre_evento') == 'Escritura Académica' %}selected{% endif %}>Escritura Académica</option>
                                             <option value="Estilo APA" {% if request.form and request.form.get('nombre_evento') == 'Estilo APA' %}selected{% endif %}>Estilo APA</option>
                                             <option value="Gestor bibliográfico" {% if request.form and request.form.get('nombre_evento') == 'Gestor bibliográfico' %}selected{% endif %}>Gestor bibliográfico</option>
-                                            <option value="Inducción a biblioteca" {% if request.form and request.form.get('nombre_evento') == 'Inducción a biblioteca' %}selected{% endif %}>Inducción a biblioteca</option>
-                                            <option value="Visibilidad científica" {% if request.form and request.form.get('nombre_evento') == 'Visibilidad científica' %}selected{% endif %}>Visibilidad científica</option>
-                                            <option value="Visita de grupos" {% if request.form and request.form.get('nombre_evento') == 'Visita de grupos' %}selected{% endif %}>Visita de grupos</option>
+                                            <option value="Inducción de Biblioteca" {% if request.form and request.form.get('nombre_evento') == 'Inducción de Biblioteca' %}selected{% endif %}>Inducción de Biblioteca</option>
+                                            <option value="Visibilidad Científica" {% if request.form and request.form.get('nombre_evento') == 'Visibilidad Científica' %}selected{% endif %}>Visibilidad Científica</option>
+                                            <option value="Visita de Grupos" {% if request.form and request.form.get('nombre_evento') == 'Visita de Grupos' %}selected{% endif %}>Visita de Grupos</option>
                                         </select>
                                         <div class="field-help">
                                             <i class="bi bi-info-circle"></i>
