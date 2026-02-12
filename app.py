@@ -1279,24 +1279,24 @@ def estadisticas():
             """)
             df_eventos = pd.read_sql_query(query5, conn, params=params)
             
-            # 6. Datos de programas (asistencias por programa)
+            # 6. Datos de programas (asistencias por programa + modalidad)
             query6 = adapt_query(f"""
-                SELECT programa_estudiante, COUNT(*) as total
+                SELECT programa_estudiante || ' - ' || modalidad as programa_completo, COUNT(*) as total
                 FROM asistencias {where_sql}
-                GROUP BY programa_estudiante 
+                GROUP BY programa_estudiante, modalidad
                 ORDER BY total DESC
                 LIMIT 15
             """)
             df_programas = pd.read_sql_query(query6, conn, params=params)
             
-            # 7. Análisis cruzado Programa x Evento
+            # 7. Análisis cruzado Programa x Evento (incluyendo modalidad)
             query7 = adapt_query(f"""
                 SELECT 
                     nombre_evento,
-                    programa_estudiante,
+                    programa_estudiante || ' - ' || modalidad as programa_completo,
                     COUNT(*) as total
                 FROM asistencias {where_sql}
-                GROUP BY nombre_evento, programa_estudiante
+                GROUP BY nombre_evento, programa_estudiante, modalidad
                 ORDER BY nombre_evento, total DESC
             """)
             df_cruzado = pd.read_sql_query(query7, conn, params=params)
@@ -1396,14 +1396,14 @@ def estadisticas():
         eventos_labels = df_eventos['nombre_evento'].tolist()
         eventos_valores = [int(x) for x in df_eventos['total_asistencias'].tolist()]
         
-        programa_labels = df_programas['programa_estudiante'].tolist()
+        programa_labels = df_programas['programa_completo'].tolist()
         programa_valores = [int(x) for x in df_programas['total'].tolist()]
         
         # Procesar datos cruzados para matriz
         matriz_cruzada = {}
         for _, row in df_cruzado.iterrows():
             evento = row['nombre_evento']
-            programa = row['programa_estudiante']
+            programa = row['programa_completo']
             total = int(row['total'])
             
             if evento not in matriz_cruzada:
