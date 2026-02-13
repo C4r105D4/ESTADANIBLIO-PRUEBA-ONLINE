@@ -287,6 +287,38 @@ def init_db():
         """)
         print("✅ Tabla programas")
 
+        # Tabla de modalidades
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS modalidades (
+                id {SERIAL} PRIMARY KEY {AUTOINCREMENT},
+                nombre {TEXT} NOT NULL UNIQUE,
+                activo {INTEGER} DEFAULT 1,
+                fecha_creacion {TIMESTAMP_DEFAULT},
+                fecha_modificacion {TIMESTAMP_DEFAULT}
+            )
+        """)
+        print("✅ Tabla modalidades")
+        
+        # Insertar modalidades por defecto (solo si no existen)
+        modalidades_default = ['Presencial', 'A Distancia', 'Virtual']
+        for modalidad in modalidades_default:
+            try:
+                if USE_POSTGRES:
+                    cursor.execute("""
+                        INSERT INTO modalidades (nombre, activo) 
+                        VALUES (%s, 1)
+                        ON CONFLICT (nombre) DO NOTHING
+                    """, (modalidad,))
+                else:
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO modalidades (nombre, activo) 
+                        VALUES (?, 1)
+                    """, (modalidad,))
+            except:
+                pass
+        
+        print("✅ Modalidades por defecto verificadas")
+
         # Tabla de asistencias (capacitaciones)
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS asistencias (
@@ -1622,23 +1654,39 @@ def gestion_programas():
     try:
         with get_db_connection() as conn:
             cursor = get_cursor(conn)
-            query = adapt_query("""
+            
+            # Obtener programas
+            query_programas = adapt_query("""
                 SELECT id, nombre, activo, 
                        fecha_creacion, fecha_modificacion
                 FROM programas
                 ORDER BY nombre ASC
             """)
-            cursor.execute(query)
+            cursor.execute(query_programas)
             programas_raw = cursor.fetchall()
+            
+            # Obtener modalidades
+            query_modalidades = adapt_query("""
+                SELECT id, nombre, activo, 
+                       fecha_creacion, fecha_modificacion
+                FROM modalidades
+                ORDER BY nombre ASC
+            """)
+            cursor.execute(query_modalidades)
+            modalidades_raw = cursor.fetchall()
         
         # Convertir a tuplas para compatibilidad con template
         programas = programas_to_tuples(programas_raw)
+        modalidades = programas_to_tuples(modalidades_raw)
         
-        return render_template("gestion_programas.html", programas=programas)
+        return render_template("gestion_programas.html", 
+                             programas=programas,
+                             modalidades=modalidades)
     except Exception as e:
         return render_template("gestion_programas.html", 
-                             error=f"Error al cargar programas: {str(e)}",
-                             programas=[])
+                             error=f"Error al cargar datos: {str(e)}",
+                             programas=[],
+                             modalidades=[])
 
 @app.route("/api/programas/activos")
 def get_programas_activos():
@@ -1785,7 +1833,183 @@ def eliminar_programa(programa_id):
         }
     except Exception as e:
         return {"success": False, "error": str(e)}, 500
+    
+# ========== API: GESTIÓN DE MODALIDADES ==========
 
+@app.route("/api/modalidades/agregar", methods=["POST"])
+def api_agregar_modalidad():
+    """Agregar nueva modalidad"""
+    if 'usuario' not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+    
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre', '').strip()
+        
+        if not nombre:
+            return {"success": False, "error": "El nombre es requerido"}, 400
+        
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            
+            try:
+                if USE_POSTGRES:
+                    cursor.execute("""
+                        INSERT INTO modalidades (nombre, activo)
+                        VALUES (%s, 1)
+                        RETURNING id
+                    """, (nombre,))
+                    modalidad_id = cursor.fetchone()['id']
+                else:
+                    cursor.execute("""
+                        INSERT INTO modalidades (nombre, activo)
+                        VALUES (?, 1)
+                    """, (nombre,))
+                    modalidad_id = cursor.lastrowid
+                
+                conn.commit()
+                
+                return {
+                    "success": True,
+                    "message": "Modalidad agregada exitosamente",
+                    "id": modalidad_id
+                }
+            
+            except Exception as e:
+                if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e):
+                    return {"success": False, "error": "Esta modalidad ya existe"}, 400
+                
+                return {"success": False, "error": str(e)}, 500
+    
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/api/modalidades/toggle/<int:modalidad_id>", methods=["POST"])
+def api_toggle_modalidad(modalidad_id):
+    """Activar/Desactivar modalidad"""
+    if 'usuario' not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            
+            # Obtener estado actual
+            if USE_POSTGRES:
+                cursor.execute("SELECT activo FROM modalidades WHERE id = %s", (modalidad_id,))
+            else:
+                cursor.execute("SELECT activo FROM modalidades WHERE id = ?", (modalidad_id,))
+            
+            row = cursor.fetchone()
+            
+            if not row:
+                return {"success": False, "error": "Modalidad no encontrada"}, 404
+            
+            # Determinar nuevo estado
+            if isinstance(row, dict):
+                current_activo = row['activo']
+            else:
+                current_activo = row[0]
+            
+            nuevo_estado = 0 if current_activo == 1 else 1
+            
+            # Actualizar estado
+            if USE_POSTGRES:
+                cursor.execute("""
+                    UPDATE modalidades 
+                    SET activo = %s, fecha_modificacion = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (nuevo_estado, modalidad_id))
+            else:
+                cursor.execute("""
+                    UPDATE modalidades 
+                    SET activo = ?, fecha_modificacion = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (nuevo_estado, modalidad_id))
+            
+            conn.commit()
+        
+        return {
+            "success": True,
+            "message": "Estado actualizado",
+            "nuevo_estado": nuevo_estado
+        }
+    
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/api/modalidades/eliminar/<int:modalidad_id>", methods=["DELETE"])
+def api_eliminar_modalidad(modalidad_id):
+    """Eliminar modalidad"""
+    if 'usuario' not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            
+            # Verificar si tiene registros asociados
+            if USE_POSTGRES:
+                cursor.execute("""
+                    SELECT COUNT(*) as count FROM asistencias WHERE modalidad = (
+                        SELECT nombre FROM modalidades WHERE id = %s
+                    )
+                """, (modalidad_id,))
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*) as count FROM asistencias WHERE modalidad = (
+                        SELECT nombre FROM modalidades WHERE id = ?
+                    )
+                """, (modalidad_id,))
+            
+            row = cursor.fetchone()
+            count = row['count'] if isinstance(row, dict) else row[0]
+            
+            if count > 0:
+                return {
+                    "success": False, 
+                    "error": f"No se puede eliminar. Hay {count} registros usando esta modalidad"
+                }, 400
+            
+            # Eliminar modalidad
+            if USE_POSTGRES:
+                cursor.execute("DELETE FROM modalidades WHERE id = %s", (modalidad_id,))
+            else:
+                cursor.execute("DELETE FROM modalidades WHERE id = ?", (modalidad_id,))
+            
+            conn.commit()
+        
+        return {
+            "success": True,
+            "message": "Modalidad eliminada exitosamente"
+        }
+    
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+@app.route("/api/modalidades/activas")
+def api_modalidades_activas():
+    """API para obtener solo modalidades activas (para el formulario)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            query = adapt_query("""
+                SELECT nombre
+                FROM modalidades
+                WHERE activo = 1
+                ORDER BY nombre ASC
+            """)
+            cursor.execute(query)
+            modalidades = cursor.fetchall()
+        
+        return {
+            "success": True,
+            "modalidades": [{"value": m["nombre"], "label": m["nombre"]} for m in modalidades]
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
 
 @app.route("/admin/limpiar_datos_antiguos")
 def limpiar_datos_route():
