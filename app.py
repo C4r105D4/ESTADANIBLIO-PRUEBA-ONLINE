@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, flash, render_template, request, redirect, url_for, session, send_file
 import pandas as pd
 import io
 import qrcode
@@ -890,16 +890,22 @@ def panel_cargar_excel():
     try:
         # Verificar que se haya enviado un archivo
         if 'file' not in request.files:
-            return redirect(url_for('panel', error='No se seleccionó ningún archivo'))
+            flash('texto', 'danger')
+            return redirect(url_for('panel'))
+
         
         file = request.files['file']
         
         if file.filename == '':
-            return redirect(url_for('panel', error='No se seleccionó ningún archivo'))
+            flash('texto', 'danger')
+            return redirect(url_for('panel'))
+
         
         # Verificar que sea un archivo Excel
         if not file.filename.endswith(('.xlsx', '.xls')):
-            return redirect(url_for('panel', error='El archivo debe ser un Excel (.xlsx o .xls)'))
+            flash('texto', 'danger')
+            return redirect(url_for('panel'))
+
         
         # Leer el archivo Excel
         df = pd.read_excel(file)
@@ -967,7 +973,9 @@ def panel_cargar_excel():
         if len(errores) > 0 and registros_duplicados <= 5:
             mensaje += f' Duplicados: {", ".join(errores)}'
         
-        return redirect(url_for('panel', success=mensaje))
+        flash(mensaje, 'success')
+        return redirect(url_for('panel'))
+
         
     except Exception as e:
         print(f"Error cargando Excel: {str(e)}")
