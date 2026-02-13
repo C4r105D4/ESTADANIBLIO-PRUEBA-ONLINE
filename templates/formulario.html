@@ -524,32 +524,27 @@
     {% endif %}
 
     <div class="container main-container">
-        
+
         <!-- Mensajes flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-custom d-flex align-items-center" role="alert">
-                    <i class="bi bi-{{ 'check-circle-fill' if category == 'success' else 'exclamation-triangle-fill' }} me-2 fs-4"></i>
+                <div class="alert alert-{{ category }} alert-custom d-flex align-items-center" role="alert">
+                    {% if category == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2 fs-4"></i>
+                    {% elif category == 'danger' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+                    {% elif category == 'warning' %}
+                        <i class="bi bi-exclamation-circle-fill me-2 fs-4"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                    {% endif %}
                     <div>{{ message }}</div>
                 </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        
-        {% if error %}
-        <div class="alert alert-danger alert-custom d-flex align-items-center" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
-            <div>{{ error }}</div>
-        </div>
-        {% endif %}
-        
-        {% if success %}
-        <div class="alert alert-success alert-custom d-flex align-items-center" role="alert">
-            <i class="bi bi-check-circle-fill me-2 fs-4"></i>
-            <div>{{ success }}</div>
-        </div>
-        {% endif %}
+
 
         <!-- Form Card -->
         <div class="row justify-content-center">
