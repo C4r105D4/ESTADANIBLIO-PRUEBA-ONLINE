@@ -685,7 +685,7 @@ def formulario():
             # Solo redirigir a evaluación si NO es "Visita de grupos"
             nombre_evento = datos["nombre_evento"]
             
-            if nombre_evento != "Visita de grupos":
+            if nombre_evento != "Visita de Grupos":
                 # Es una capacitación/taller - debe evaluarse
                 if es_acceso_publico:
                     return redirect(url_for('formulario_evaluacion', asistencia_id=asistencia_id, publico='1'))
