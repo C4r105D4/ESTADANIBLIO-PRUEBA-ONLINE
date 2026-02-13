@@ -886,6 +886,7 @@
     <script>
         // Cargar programas activos desde la API al cargar la página
         document.addEventListener('DOMContentLoaded', async function() {
+            // Cargar programas activos desde la API
             try {
                 const response = await fetch('/api/programas/activos');
                 const data = await response.json();
@@ -932,6 +933,38 @@
             } catch (error) {
                 console.error('⚠️ Error al cargar programas desde API:', error);
                 console.log('ℹ️ Usando programas del template como fallback');
+            }
+
+            // Cargar modalidades activas desde la API
+            try {
+                const response = await fetch('/api/modalidades/activas');
+                const data = await response.json();
+                
+                if (data.success && data.modalidades) {
+                    const modalidadSelect = document.getElementById('modalidad');
+                    
+                    // Guardar valor previo si existe (en caso de error de formulario)
+                    const modalidadValuePrevio = modalidadSelect ? modalidadSelect.value : '';
+                    
+                    // Limpiar y repoblar modalidades
+                    if (modalidadSelect) {
+                        modalidadSelect.innerHTML = '<option value="" disabled selected>Seleccione</option>';
+                        data.modalidades.forEach(modalidad => {
+                            const option = document.createElement('option');
+                            option.value = modalidad.value;
+                            option.textContent = modalidad.label;
+                            if (modalidadValuePrevio === modalidad.value) {
+                                option.selected = true;
+                            }
+                            modalidadSelect.appendChild(option);
+                        });
+                    }
+                    
+                    console.log(`✅ Cargadas ${data.modalidades.length} modalidades activas desde la base de datos`);
+                }
+            } catch (error) {
+                console.error('⚠️ Error al cargar modalidades desde API:', error);
+                console.log('ℹ️ Usando modalidades del template como fallback');
             }
         });
     </script>
