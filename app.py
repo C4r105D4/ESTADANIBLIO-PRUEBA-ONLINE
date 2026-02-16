@@ -796,7 +796,7 @@ def convertir_programas_para_vista(datos):
         # Si es un diccionario (PostgreSQL con RealDictCursor), extraer valores
         # Si es una Row de SQLite, convertir a lista
         if isinstance(fila, dict):
-            # PostgreSQL - Extraer valores en el orden correcto
+            # PostgreSQL - Extraer valores en el orden correcto con fecha_evento al final
             fila_convertida = [
                 fila.get('nombre_evento', ''),
                 fila.get('dictado_por', ''),
@@ -807,16 +807,19 @@ def convertir_programas_para_vista(datos):
                 fila.get('programa_estudiante', ''),
                 fila.get('modalidad', ''),
                 fila.get('tipo_asistente', ''),
-                fila.get('sede', '')
+                fila.get('sede', ''),
+                fila.get('fecha_evento', '')
             ]
         else:
             # SQLite - Convertir Row a lista
             fila_convertida = list(fila)
         
-        # Convertir nombres de programas
+        # Convertir nombres de programas (las posiciones están en el lugar original)
+        # programa_docente está en posición 3
         if len(fila_convertida) > 3 and fila_convertida[3]:
             fila_convertida[3] = programas_map.get(fila_convertida[3], fila_convertida[3])
         
+        # programa_estudiante está en posición 6
         if len(fila_convertida) > 6 and fila_convertida[6]:
             fila_convertida[6] = programas_map.get(fila_convertida[6], fila_convertida[6])
         
@@ -848,7 +851,7 @@ def panel():
                 query = adapt_query("""
                     SELECT nombre_evento, dictado_por, docente, programa_docente,
                            numero_identificacion, nombre_completo, programa_estudiante,
-                           modalidad, tipo_asistente, sede
+                           modalidad, tipo_asistente, sede, fecha_evento
                     FROM asistencias
                     WHERE nombre_evento LIKE ? 
                        OR dictado_por LIKE ?
@@ -860,14 +863,15 @@ def panel():
                        OR modalidad LIKE ?
                        OR tipo_asistente LIKE ?
                        OR sede LIKE ?
+                       OR fecha_evento LIKE ?
                     ORDER BY fecha_evento DESC, nombre_evento
                 """)
-                cursor.execute(query, tuple([f"%{filtro}%" for _ in range(10)]))
+                cursor.execute(query, tuple([f"%{filtro}%" for _ in range(11)]))
             else:
                 query = adapt_query("""
                     SELECT nombre_evento, dictado_por, docente, programa_docente,
                            numero_identificacion, nombre_completo, programa_estudiante,
-                           modalidad, tipo_asistente, sede
+                           modalidad, tipo_asistente, sede, fecha_evento
                     FROM asistencias
                     ORDER BY fecha_evento DESC, nombre_evento
                 """)
@@ -989,9 +993,9 @@ def exportar():
         return redirect(url_for("login"))
 
     try:
-        filtros = [request.args.get(f"col{i}", "").strip() for i in range(10)]
+        filtros = [request.args.get(f"col{i}", "").strip() for i in range(11)]
         columnas = ["nombre_evento","dictado_por","docente","programa_docente","numero_identificacion",
-                    "nombre_completo","programa_estudiante","modalidad","tipo_asistente","sede"]
+                    "nombre_completo","programa_estudiante","modalidad","tipo_asistente","sede","fecha_evento"]
 
         query = "SELECT * FROM asistencias"
         condiciones = []
