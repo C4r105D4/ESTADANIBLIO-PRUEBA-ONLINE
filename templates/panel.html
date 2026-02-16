@@ -557,11 +557,12 @@
                                     <th><i class="bi bi-laptop me-1"></i>Modalidad (Presencial, Distancia, Virtual)</th>
                                     <th><i class="bi bi-people me-1"></i>Tipo de Asistente</th>
                                     <th><i class="bi bi-geo-alt me-1"></i>Sede</th>
+                                    <th><i class="bi bi-calendar3 me-1"></i>Fecha Evento</th>
                                 </tr>
                                 <!-- Fila 2: Inputs de filtrado por columna -->
                                 <tr class="bg-light">
-                                    <!-- Loop para crear 10 inputs de filtro (uno por columna) -->
-                                    {% for i in range(10) %}
+                                    <!-- Loop para crear 11 inputs de filtro (uno por columna) -->
+                                    {% for i in range(11) %}
                                     <th>
                                         <input 
                                             type="text" 
@@ -585,7 +586,7 @@
                                 {% else %}
                                 <!-- Mensaje cuando no hay datos -->
                                 <tr>
-                                    <td colspan="10" class="text-center py-5 text-muted">
+                                    <td colspan="11" class="text-center py-5 text-muted">
                                         <i class="bi bi-inbox display-1 d-block mb-3 opacity-25"></i>
                                         <h5>No hay datos disponibles</h5>
                                         <p>Registra la primera asistencia para comenzar.</p>
@@ -606,7 +607,7 @@
                     <!-- Formulario de exportación -->
                     <form id="exportForm" method="GET" action="{{ url_for('exportar') }}" class="d-inline">
                         <!-- Inputs ocultos para enviar los filtros aplicados -->
-                        {% for i in range(10) %}
+                        {% for i in range(11) %}
                         <input type="hidden" name="col{{ i }}" id="col{{ i }}_input">
                         {% endfor %}
                         <button type="submit" class="btn btn-custom btn-export" id="exportBtn">
