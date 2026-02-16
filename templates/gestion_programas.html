@@ -388,10 +388,16 @@
                     <i class="bi bi-list-ul"></i>
                     Lista de Programas
                 </h2>
-                <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addProgramModal">
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Agregar Programa
-                </button>
+                <div>
+                    <button class="btn btn-add me-2" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
+                        <i class="bi bi-file-earmark-excel me-2"></i>
+                        Cargar Excel
+                    </button>
+                    <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addProgramModal">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Agregar Programa
+                    </button>
+                </div>
             </div>
 
             <!-- Estadísticas -->
@@ -483,6 +489,104 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Content Card - MODALIDADES -->
+        <div class="content-card">
+            <!-- Header con botón agregar modalidad -->
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="bi bi-laptop"></i>
+                    Gestión de Modalidades
+                </h2>
+                <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addModalidadModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Agregar Modalidad
+                </button>
+            </div>
+
+            <!-- Estadísticas de Modalidades -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalModalidades">{{ modalidades|length if modalidades else 0 }}</div>
+                    <div class="stat-label">Total de Modalidades</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeModalidades">
+                        {{ modalidades|selectattr('activo', 'equalto', 1)|list|length if modalidades else 0 }}
+                    </div>
+                    <div class="stat-label">Modalidades Activas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="inactiveModalidades">
+                        {{ modalidades|selectattr('activo', 'equalto', 0)|list|length if modalidades else 0 }}
+                    </div>
+                    <div class="stat-label">Modalidades Inactivas</div>
+                </div>
+            </div>
+
+            <!-- Tabla de modalidades -->
+            <div class="table-container">
+                {% if modalidades and modalidades|length > 0 %}
+                <table class="table programs-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre de la Modalidad</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Última Modificación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalidadesTableBody">
+                        {% for modalidad in modalidades %}
+                        <tr data-modalidad-id="{{ modalidad[0] }}" 
+                            data-nombre="{{ modalidad[1] }}">
+                            <td>{{ modalidad[1] }}</td>
+                            <td>
+                                {% if modalidad[2] == 1 %}
+                                <span class="badge-status badge-active">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Activo
+                                </span>
+                                {% else %}
+                                <span class="badge-status badge-inactive">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Inactivo
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ modalidad[3][:10] if modalidad[3] else 'N/A' }}</td>
+                            <td>{{ modalidad[4][:10] if modalidad[4] else 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-action btn-toggle" 
+                                        onclick="toggleModalidad({{ modalidad[0] }}, {{ modalidad[2] }})">
+                                    {% if modalidad[2] == 1 %}
+                                    <i class="bi bi-toggle-on me-1"></i>
+                                    Deshabilitar
+                                    {% else %}
+                                    <i class="bi bi-toggle-off me-1"></i>
+                                    Habilitar
+                                    {% endif %}
+                                </button>
+                                <button class="btn btn-action btn-delete" 
+                                        onclick="confirmDeleteModalidad({{ modalidad[0] }}, '{{ modalidad[1] }}')">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-laptop"></i>
+                    <h4>No hay modalidades registradas</h4>
+                    <p>Agrega tu primera modalidad haciendo clic en el botón "Agregar Modalidad"</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Modal para agregar programa -->
@@ -531,6 +635,132 @@
                     <button type="button" class="btn btn-save btn-modal-action" onclick="saveProgram()">
                         <i class="bi bi-check-circle me-2"></i>
                         Guardar Programa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cargar Excel de programas -->
+    <div class="modal fade" id="uploadExcelModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-excel me-2"></i>
+                        Cargar Programas desde Excel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadExcelForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label">
+                                <i class="bi bi-cloud-upload me-2"></i>
+                                Seleccionar archivo Excel
+                            </label>
+                            <input type="file" class="form-control" id="excelFile" 
+                                   accept=".xlsx,.xls" required>
+                            
+                            <div class="info-box mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>
+                                    <strong>Formato requerido del archivo Excel:</strong><br>
+                                    • El archivo debe tener una columna llamada <code>nombre</code>, <code>Nombre</code> o <code>NOMBRE</code><br>
+                                    • Cada fila representa un programa académico<br>
+                                    • El sistema eliminará duplicados automáticamente<br>
+                                    • Los programas duplicados no serán agregados<br>
+                                    <br>
+                                    <strong>Ejemplo:</strong><br>
+                                    <table class="table table-sm table-bordered mt-2">
+                                        <thead>
+                                            <tr>
+                                                <th>nombre</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Ingeniería de Sistemas</td></tr>
+                                            <tr><td>Psicología</td></tr>
+                                            <tr><td>Diseño Gráfico</td></tr>
+                                        </tbody>
+                                    </table>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div id="uploadProgress" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%">
+                                    Procesando archivo...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="uploadResult" style="display: none;" class="mt-3">
+                            <!-- Resultado dinámico -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modal-action" data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-save btn-modal-action" onclick="uploadExcel()">
+                        <i class="bi bi-upload me-2"></i>
+                        Cargar Programas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar modalidad -->
+    <div class="modal fade" id="addModalidadModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Agregar Nueva Modalidad
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addModalidadForm">
+                        <div class="mb-3">
+                            <label for="modalidadNombre" class="form-label">
+                                <i class="bi bi-laptop me-2"></i>
+                                Nombre de la Modalidad
+                            </label>
+                            <input type="text" class="form-control" id="modalidadNombre" 
+                                   placeholder="Ej: Presencial" required>
+                            
+                            <div class="info-box mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>
+                                    <strong>Ejemplos de modalidades:</strong><br>
+                                    • Presencial<br>
+                                    • A Distancia<br>
+                                    • Virtual<br>
+                                    <br>
+                                    Las modalidades permiten diferenciar programas por su forma de dictado.
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="modalAlertModalidad" class="alert alert-dismissible fade" role="alert" style="display: none;">
+                        <span id="modalAlertModalidadMessage"></span>
+                        <button type="button" class="btn-close" onclick="hideModalAlertModalidad()"></button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modal-action" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-save btn-modal-action" onclick="saveModalidad()">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Guardar Modalidad
                     </button>
                 </div>
             </div>
@@ -659,6 +889,204 @@
         document.getElementById('addProgramModal').addEventListener('hidden.bs.modal', function() {
             document.getElementById('addProgramForm').reset();
             hideModalAlert();
+        });
+
+        // ========== FUNCIONES PARA MODALIDADES ==========
+
+        // Función para guardar una nueva modalidad
+        async function saveModalidad() {
+            const nombre = document.getElementById('modalidadNombre').value.trim();
+            
+            if (!nombre) {
+                showModalAlertModalidad('Por favor ingresa el nombre de la modalidad', 'danger');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/modalidades/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ nombre })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Cerrar modal y recargar página
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addModalidadModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    showModalAlertModalidad(data.error || 'Error al agregar modalidad', 'danger');
+                }
+            } catch (error) {
+                showModalAlertModalidad('Error de conexión: ' + error.message, 'danger');
+            }
+        }
+
+        // Función para alternar estado de la modalidad
+        async function toggleModalidad(modalidadId, currentStatus) {
+            const action = currentStatus === 1 ? 'deshabilitar' : 'habilitar';
+            
+            if (!confirm(`¿Estás seguro de que deseas ${action} esta modalidad?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/modalidades/toggle/${modalidadId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo cambiar el estado'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Función para confirmar eliminación de modalidad
+        async function confirmDeleteModalidad(modalidadId, modalidadName) {
+            if (!confirm(`¿Estás seguro de que deseas ELIMINAR la modalidad "${modalidadName}"?\n\nEsta acción no se puede deshacer. Si la modalidad tiene registros asociados, no podrá eliminarse.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/modalidades/eliminar/${modalidadId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo eliminar la modalidad'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar alerta en modal de modalidad
+        function showModalAlertModalidad(message, type) {
+            const alertDiv = document.getElementById('modalAlertModalidad');
+            const alertMessage = document.getElementById('modalAlertModalidadMessage');
+            
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertMessage.textContent = message;
+            alertDiv.style.display = 'block';
+        }
+
+        // Ocultar alerta en modal de modalidad
+        function hideModalAlertModalidad() {
+            const alertDiv = document.getElementById('modalAlertModalidad');
+            alertDiv.style.display = 'none';
+        }
+
+        // Limpiar formulario al cerrar modal de modalidad
+        document.getElementById('addModalidadModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('addModalidadForm').reset();
+            hideModalAlertModalidad();
+        });
+
+        // ========== FUNCIÓN PARA CARGAR EXCEL DE PROGRAMAS ==========
+
+        async function uploadExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showUploadResult('Por favor selecciona un archivo Excel', 'danger');
+                return;
+            }
+            
+            // Verificar extensión
+            const fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                showUploadResult('El archivo debe ser un Excel (.xlsx o .xls)', 'danger');
+                return;
+            }
+            
+            // Mostrar progreso
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadResult').style.display = 'none';
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/programas/cargar_excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Ocultar progreso
+                document.getElementById('uploadProgress').style.display = 'none';
+                
+                if (data.success) {
+                    let resultHTML = `
+                        <div class="alert alert-success">
+                            <h6><i class="bi bi-check-circle me-2"></i>¡Carga exitosa!</h6>
+                            <p class="mb-2">${data.message}</p>
+                            <ul class="mb-0">
+                                <li><strong>Programas agregados:</strong> ${data.agregados}</li>
+                                ${data.duplicados > 0 ? `<li><strong>Programas duplicados (omitidos):</strong> ${data.duplicados}</li>` : ''}
+                            </ul>
+                    `;
+                    
+                    if (data.errores && data.errores.length > 0) {
+                        resultHTML += `
+                            <hr>
+                            <h6>Errores encontrados:</h6>
+                            <ul class="mb-0" style="max-height: 150px; overflow-y: auto;">
+                                ${data.errores.map(err => `<li>${err}</li>`).join('')}
+                            </ul>
+                        `;
+                    }
+                    
+                    resultHTML += '</div>';
+                    showUploadResult(resultHTML, 'success', true);
+                    
+                    // Recargar después de 5 segundos
+                    setTimeout(() => {
+                        location.reload();
+                    }, 5000);
+                } else {
+                    showUploadResult(data.error || 'Error al cargar el archivo', 'danger');
+                }
+            } catch (error) {
+                document.getElementById('uploadProgress').style.display = 'none';
+                showUploadResult('Error de conexión: ' + error.message, 'danger');
+            }
+        }
+
+        function showUploadResult(message, type, isHTML = false) {
+            const resultDiv = document.getElementById('uploadResult');
+            
+            if (isHTML) {
+                resultDiv.innerHTML = message;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            }
+            
+            resultDiv.style.display = 'block';
+        }
+
+        // Limpiar formulario al cerrar modal de carga Excel
+        document.getElementById('uploadExcelModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('uploadExcelForm').reset();
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadResult').style.display = 'none';
         });
     </script>
 </body>
