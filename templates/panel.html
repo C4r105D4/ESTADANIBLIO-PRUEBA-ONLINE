@@ -439,7 +439,7 @@
                         </div>
                         <div>
                             <!-- Contador que se actualiza con filtros -->
-                            <h3 class="mb-0" id="totalRegistros">{{ datos|length }}</h3>
+                            <h3 class="mb-0" id="totalRegistros">{{ total_registros }}</h3>
                             <p class="text-muted mb-0">Total Registros</p>
                         </div>
                     </div>
@@ -575,24 +575,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Loop para mostrar cada fila de datos -->
-                                {% for fila in datos %}
-                                <tr>
-                                    <!-- Loop para mostrar cada celda de la fila -->
-                                    {% for celda in fila %}
-                                    <td class="text-truncate" style="max-width: 200px;" title="{{ celda }}">{{ celda }}</td>
-                                    {% endfor %}
-                                </tr>
-                                {% else %}
-                                <!-- Mensaje cuando no hay datos -->
-                                <tr>
-                                    <td colspan="11" class="text-center py-5 text-muted">
-                                        <i class="bi bi-inbox display-1 d-block mb-3 opacity-25"></i>
-                                        <h5>No hay datos disponibles</h5>
-                                        <p>Registra la primera asistencia para comenzar.</p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
+                                <!-- DataTables carga las filas via AJAX (server-side processing) -->
                             </tbody>
                         </table>
                     </div>
@@ -898,73 +881,71 @@
                 });
             }
 
-            {% if datos and datos|length > 0 %}
-            /* ===== MODO: CON DATOS - INICIALIZAR DATATABLE ===== */
-            
-            /**
-             * Sobrescribe la función de búsqueda de DataTables
-             * para que ignore acentos y mayúsculas
-             */
-            $.fn.dataTable.ext.type.search.string = function(data) {
-                return !data ? '' : normalizeString(data);
-            };
+            {% if total_registros > 0 %}
+            /* ===== MODO: CON DATOS - INICIALIZAR DATATABLE (SERVER-SIDE) ===== */
 
             /* ===== CÁLCULO DE ESTADÍSTICAS ===== */
-            
+
             /**
-             * Calcula y actualiza las estadísticas mostradas en las tarjetas
-             * - Eventos únicos (columna 0)
-             * - Programas únicos (columna 6)
-             * - Sedes únicas (columna 9)
+             * Pide al servidor las estadísticas globales (eventos, programas, sedes únicos)
+             * Se llama una vez al cargar y al limpiar filtros
              */
-            function calculateStats() {
-                // Obtener todos los datos de las filas de la tabla
-                const tableRows = table.rows().data().toArray();
-                
-                if (tableRows && tableRows.length > 0) {
-                    // Calcular eventos únicos de la columna 0
-                    const uniqueEvents = [...new Set(tableRows.map(row => row[0]))];
-                    $('#totalEventos').text(uniqueEvents.length);
-                    
-                    // Calcular programas únicos de la columna 6
-                    const uniquePrograms = [...new Set(tableRows.map(row => row[6]))];
-                    $('#totalProgramas').text(uniquePrograms.length);
-                    
-                    // Calcular sedes únicas de la columna 9
-                    const uniqueLocations = [...new Set(tableRows.map(row => row[9]))];
-                    $('#totalSedes').text(uniqueLocations.length);
-                } else {
-                    // Si no hay datos, mostrar 0 en todas las estadísticas
-                    $('#totalEventos').text('0');
-                    $('#totalProgramas').text('0');
-                    $('#totalSedes').text('0');
-                }
+            function loadStats() {
+                $.getJSON("{{ url_for('api_stats_asistencias') }}", function(data) {
+                    if (data.success) {
+                        $('#totalEventos').text(data.eventos);
+                        $('#totalProgramas').text(data.programas);
+                        $('#totalSedes').text(data.sedes);
+                    }
+                });
             }
 
-            /* ===== INICIALIZACIÓN DE DATATABLE ===== */
-            
-            // Mostrar loading al inicio
+            /* ===== INICIALIZACIÓN DE DATATABLE CON SERVER-SIDE PROCESSING ===== */
+
             showLoading();
-            
-            /**
-             * Inicializa DataTable con configuraciones personalizadas
-             * Incluye:
-             * - Paginación
-             * - Búsqueda
-             * - Ordenamiento
-             * - Responsividad
-             * - Traducción al español
-             */
+
             var table = $('#tablaAsistencias').DataTable({
-                orderCellsTop: true,    // Permite ordenar desde la primera fila del thead
-                fixedHeader: true,       // Encabezado fijo al hacer scroll
-                responsive: true,        // Tabla adaptable a móviles
-                paging: true,           // Habilita paginación
-                pageLength: 25,         // 25 registros por página por defecto
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]], // Opciones de paginación
-                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>t<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // Estructura del DOM
+                serverSide: true,           // Procesamiento en el servidor
+                ajax: {
+                    url: "{{ url_for('api_asistencias') }}",
+                    type: 'GET',
+                    error: function(xhr, error, thrown) {
+                        hideLoading();
+                        showToast('Error cargando datos: ' + thrown, 'error');
+                    }
+                },
+                columns: [
+                    { data: 0 },  // nombre_evento
+                    { data: 1 },  // dictado_por
+                    { data: 2 },  // docente
+                    { data: 3 },  // programa_docente
+                    { data: 4 },  // numero_identificacion
+                    { data: 5 },  // nombre_completo
+                    { data: 6 },  // programa_estudiante
+                    { data: 7 },  // modalidad
+                    { data: 8 },  // tipo_asistente
+                    { data: 9 },  // sede
+                    { data: 10 } // fecha_evento
+                ],
+                columnDefs: [{
+                    targets: '_all',
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            var val = data || '';
+                            return '<span class="text-truncate d-inline-block" style="max-width:200px;" title="' + $('<div/>').text(val).html() + '">' + $('<div/>').text(val).html() + '</span>';
+                        }
+                        return data;
+                    }
+                }],
+                orderCellsTop: true,
+                fixedHeader: true,
+                responsive: true,
+                paging: true,
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order: [[10, 'desc']],      // Ordenar por fecha_evento desc por defecto
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>t<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 language: {
-                    // Traducciones al español
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
                     emptyTable: "No hay datos disponibles en la tabla",
                     zeroRecords: "No se encontraron resultados",
@@ -972,55 +953,43 @@
                     infoEmpty: "Mostrando 0 a 0 de 0 registros",
                     infoFiltered: "(filtrado de _MAX_ registros totales)",
                     search: "Buscar:",
-                    lengthMenu: "Mostrar _MENU_ registros"
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    processing: "Cargando..."
                 },
                 initComplete: function() {
-                    // Callback cuando la tabla está completamente inicializada
-                    hideLoading();        // Ocultar overlay de carga
-                    calculateStats();     // Calcular estadísticas iniciales
+                    hideLoading();
+                    loadStats();
                 }
             });
 
+            // Actualizar contador de registros visibles al redibujar
+            table.on('draw', function() {
+                var info = table.page.info();
+                $('#totalRegistros').text(info.recordsDisplay);
+            });
+
             /* ===== FILTRADO POR COLUMNA ===== */
-            
+
             /**
-             * Event listener para los inputs de filtro por columna
-             * Filtra la tabla por el valor ingresado en cada columna
-             * La búsqueda es parcial y normalizada (sin acentos ni mayúsculas)
+             * Envía el valor del filtro de cada columna al servidor vía AJAX
              */
             $('.column-filter').on('keyup change', function() {
-                var index = $(this).parent().index(); // Obtener índice de la columna
-                var searchTerm = this.value;           // Término de búsqueda
-                
-                // Aplicar filtro a la columna específica
+                var index = $(this).parent().index();
+                var searchTerm = this.value;
                 table.column(index).search(searchTerm, false, true, true).draw();
-                
-                // Actualizar contador de registros visibles
-                const visibleRows = table.rows({ search: 'applied' }).count();
-                $('#totalRegistros').text(visibleRows);
             });
 
             /* ===== LIMPIAR FILTROS ===== */
-            
-            /**
-             * Event listener para el botón de limpiar filtros
-             * Resetea todos los filtros y búsquedas aplicadas
-             */
+
             $('#clearFilters').on('click', function() {
-                $('.column-filter').val('');                           // Limpiar inputs
-                table.search('').columns().search('').draw();          // Limpiar búsquedas
-                $('#totalRegistros').text({{ datos|length }});         // Restaurar contador
-                
-                // Mostrar notificación
+                $('.column-filter').val('');
+                table.search('').columns().search('').draw();
+                loadStats();
                 showToast('Filtros limpiados', 'success');
             });
 
             /* ===== EFECTOS HOVER EN FILAS ===== */
-            
-            /**
-             * Agrega clase 'table-active' al hacer hover sobre filas
-             * Mejora el feedback visual al usuario
-             */
+
             $('#tablaAsistencias tbody').on('mouseenter', 'tr', function() {
                 $(this).addClass('table-active');
             }).on('mouseleave', 'tr', function() {
