@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import unicodedata
 
 # --- CONFIGURACIÓN DUAL: SQLite (desarrollo) y PostgreSQL (producción) ---
 DATABASE_URL = os.environ.get('DATABASE_URL')  # Render proporciona esta variable
@@ -62,6 +63,24 @@ def adapt_query(query):
         # Reemplazar SUBSTR con SUBSTRING
         query = query.replace('SUBSTR(', 'SUBSTRING(')
     return query
+
+def normalize_text(text):
+    """
+    Normaliza un texto removiendo acentos y convirtiendo a minúsculas.
+    Usado para búsquedas insensibles a mayúsculas y tildes.
+    
+    Ejemplo: "Ingeniería de Sistemas" -> "ingenieria de sistemas"
+    """
+    if not text:
+        return ''
+    # Convertir a minúsculas
+    text = str(text).lower()
+    # Remover acentos usando unicodedata
+    # NFD = Canonical Decomposition (separa letras de sus acentos)
+    text = unicodedata.normalize('NFD', text)
+    # Filtrar solo caracteres ASCII (elimina las marcas diacríticas)
+    text = text.encode('ascii', 'ignore').decode('utf-8')
+    return text
 
 def get_programas_list():
     """Obtener lista de todos los programas desde la base de datos"""
@@ -865,6 +884,8 @@ def api_asistencias():
     API para DataTables server-side processing.
     Recibe parámetros de DataTables (draw, start, length, search, order, columns)
     y devuelve el JSON que DataTables espera.
+    
+    INCLUYE: Búsqueda insensible a mayúsculas y acentos usando normalize_text()
     """
     if "usuario" not in session:
         return {"error": "No autorizado"}, 401
@@ -896,19 +917,31 @@ def api_asistencias():
             val = request.args.get(f'columns[{i}][search][value]', '').strip()
             col_filters.append(val)
 
-        # Construir WHERE
+        # Construir WHERE con búsqueda normalizada
         conditions = []
         params     = []
 
+        # Búsqueda global (normalizada)
         if search_val:
-            sub = ' OR '.join([f"{c} LIKE ?" for c in col_names])
+            search_normalized = normalize_text(search_val)
+            if USE_POSTGRES:
+                # PostgreSQL: usar unaccent si está disponible, sino usar LOWER
+                sub = ' OR '.join([f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({c}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s" for c in col_names])
+            else:
+                # SQLite: crear una condición con LOWER para cada columna
+                sub = ' OR '.join([f"LOWER({c}) LIKE ?" for c in col_names])
             conditions.append(f"({sub})")
-            params += [f"%{search_val}%" for _ in col_names]
+            params += [f"%{search_normalized}%" for _ in col_names]
 
+        # Filtros por columna (normalizados)
         for i, val in enumerate(col_filters):
             if val:
-                conditions.append(f"{col_names[i]} LIKE ?")
-                params.append(f"%{val}%")
+                val_normalized = normalize_text(val)
+                if USE_POSTGRES:
+                    conditions.append(f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({col_names[i]}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s")
+                else:
+                    conditions.append(f"LOWER({col_names[i]}) LIKE ?")
+                params.append(f"%{val_normalized}%")
 
         where_clause = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
 
