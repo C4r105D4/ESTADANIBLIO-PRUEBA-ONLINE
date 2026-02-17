@@ -2217,6 +2217,90 @@ def api_modalidades_activas():
     except Exception as e:
         return {"success": False, "error": str(e)}, 500
 
+@app.route("/admin/evaluaciones_capacitadores")
+def ver_evaluaciones_capacitadores():
+    """
+    Página para ver las evaluaciones de los capacitadores.
+    Muestra estadísticas por capacitador y evaluaciones individuales.
+    """
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            
+            # Obtener estadísticas por capacitador
+            query_stats = adapt_query("""
+                SELECT 
+                    a.dictado_por as capacitador,
+                    COUNT(DISTINCT e.id) as total_evaluaciones,
+                    ROUND(AVG(e.calidad_contenido), 2) as prom_calidad,
+                    ROUND(AVG(e.metodologia), 2) as prom_metodologia,
+                    ROUND(AVG(e.lenguaje_comprensible), 2) as prom_lenguaje,
+                    ROUND(AVG(e.manejo_grupo), 2) as prom_manejo,
+                    ROUND(AVG(e.solucion_inquietudes), 2) as prom_solucion,
+                    ROUND(AVG((e.calidad_contenido + e.metodologia + e.lenguaje_comprensible + 
+                               e.manejo_grupo + e.solucion_inquietudes) / 5.0), 2) as promedio_general
+                FROM evaluaciones_capacitaciones e
+                INNER JOIN asistencias a ON e.asistencia_id = a.id
+                GROUP BY a.dictado_por
+                ORDER BY promedio_general DESC, total_evaluaciones DESC
+            """)
+            cursor.execute(query_stats)
+            stats_capacitadores = cursor.fetchall()
+            
+            # Obtener todas las evaluaciones con detalles
+            query_evaluaciones = adapt_query("""
+                SELECT 
+                    e.id,
+                    e.asistencia_id,
+                    e.calidad_contenido,
+                    e.metodologia,
+                    e.lenguaje_comprensible,
+                    e.manejo_grupo,
+                    e.solucion_inquietudes,
+                    e.comentarios,
+                    e.fecha_evaluacion,
+                    a.nombre_evento,
+                    a.dictado_por as capacitador,
+                    a.fecha_evento,
+                    a.nombre_completo as evaluador,
+                    a.tipo_asistente,
+                    a.programa_estudiante,
+                    ROUND((e.calidad_contenido + e.metodologia + e.lenguaje_comprensible + 
+                           e.manejo_grupo + e.solucion_inquietudes) / 5.0, 2) as promedio_individual
+                FROM evaluaciones_capacitaciones e
+                INNER JOIN asistencias a ON e.asistencia_id = a.id
+                ORDER BY e.fecha_evaluacion DESC
+            """)
+            cursor.execute(query_evaluaciones)
+            evaluaciones = cursor.fetchall()
+            
+            # Calcular promedio general del sistema
+            query_promedio_global = adapt_query("""
+                SELECT 
+                    COUNT(*) as total,
+                    ROUND(AVG((calidad_contenido + metodologia + lenguaje_comprensible + 
+                               manejo_grupo + solucion_inquietudes) / 5.0), 2) as promedio
+                FROM evaluaciones_capacitaciones
+            """)
+            cursor.execute(query_promedio_global)
+            promedio_global = cursor.fetchone()
+        
+        return render_template("evaluaciones_capacitadores.html",
+                             stats_capacitadores=stats_capacitadores,
+                             evaluaciones=evaluaciones,
+                             promedio_global=promedio_global)
+    
+    except Exception as e:
+        print(f"Error al obtener evaluaciones: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return render_template("panel.html",
+                             error=f"Error al cargar evaluaciones: {str(e)}",
+                             total_registros=0)
+
 @app.route("/admin/limpiar_datos_antiguos")
 def limpiar_datos_route():
     """
