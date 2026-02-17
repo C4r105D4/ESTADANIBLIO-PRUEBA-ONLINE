@@ -593,6 +593,11 @@
                         {% for i in range(11) %}
                         <input type="hidden" name="col{{ i }}" id="col{{ i }}_input">
                         {% endfor %}
+                        <!-- Búsqueda global -->
+                        <input type="hidden" name="global_search" id="global_search_input">
+                        <!-- Ordenamiento -->
+                        <input type="hidden" name="order_column" id="order_column_input">
+                        <input type="hidden" name="order_dir" id="order_dir_input">
                         <button type="submit" class="btn btn-custom btn-export" id="exportBtn">
                             <i class="bi bi-download me-2"></i>
                             Exportar Excel
@@ -1026,46 +1031,26 @@
             
             /**
              * Event listener para el formulario de exportación
-             * Captura los filtros aplicados y los envía al servidor
+             * Captura los filtros aplicados (por columna y búsqueda global) y los envía al servidor
              */
             $('#exportForm').on('submit', function(e) {
                 e.preventDefault(); // Prevenir envío por defecto
                 
-                // Copiar valores de filtros a inputs ocultos
+                // Copiar valores de filtros de columna a inputs ocultos
                 $('.column-filter').each(function(index) {
                     $('#col'+index+'_input').val($(this).val());
                 });
                 
-                // Cambiar estado del botón durante la exportación
-                const $btn = $('#exportBtn');
-                const originalHtml = $btn.html();
-                $btn.html('<i class="bi bi-hourglass-split me-2"></i>Exportando...');
-                $btn.prop('disabled', true);
+                // Capturar búsqueda global de DataTables
+                var globalSearch = table.search();
+                $('#global_search_input').val(globalSearch);
                 
-                // Enviar formulario
-                this.submit();
-                
-                // Restaurar botón después de 2 segundos
-                setTimeout(() => {
-                    $btn.html(originalHtml);
-                    $btn.prop('disabled', false);
-                    showToast('Exportación completada', 'success');
-                }, 2000);
-            });
-
-            /* ===== EXPORTACIÓN A EXCEL ===== */
-            
-            /**
-             * Event listener para el formulario de exportación
-             * Captura los filtros aplicados y los envía al servidor
-             */
-            $('#exportForm').on('submit', function(e) {
-                e.preventDefault(); // Prevenir envío por defecto
-                
-                // Copiar valores de filtros a inputs ocultos
-                $('.column-filter').each(function(index) {
-                    $('#col'+index+'_input').val($(this).val());
-                });
+                // Capturar orden actual de DataTables
+                var order = table.order();
+                if (order && order.length > 0) {
+                    $('#order_column_input').val(order[0][0]); // Índice de columna
+                    $('#order_dir_input').val(order[0][1]);     // 'asc' o 'desc'
+                }
                 
                 // Cambiar estado del botón durante la exportación
                 const $btn = $('#exportBtn');
