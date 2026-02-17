@@ -1141,23 +1141,67 @@ def exportar():
         return redirect(url_for("login"))
 
     try:
-        filtros = [request.args.get(f"col{i}", "").strip() for i in range(11)]
-        columnas = ["nombre_evento","dictado_por","docente","programa_docente","numero_identificacion",
-                    "nombre_completo","programa_estudiante","modalidad","tipo_asistente","sede","fecha_evento"]
+        # Obtener filtros de columnas (11 columnas)
+        col_filters = [request.args.get(f"col{i}", "").strip() for i in range(11)]
+        
+        # Obtener búsqueda global
+        global_search = request.args.get("global_search", "").strip()
+        
+        # Obtener ordenamiento
+        order_column = request.args.get("order_column", "10")  # Por defecto columna 10 (fecha_evento)
+        order_dir = request.args.get("order_dir", "desc")       # Por defecto descendente
+        
+        # Nombres de columnas en el mismo orden que la tabla
+        col_names = [
+            'nombre_evento', 'dictado_por', 'docente', 'programa_docente',
+            'numero_identificacion', 'nombre_completo', 'programa_estudiante',
+            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento'
+        ]
+        
+        # Validar índice de columna de ordenamiento
+        try:
+            order_col_idx = int(order_column)
+            if 0 <= order_col_idx < len(col_names):
+                order_col = col_names[order_col_idx]
+            else:
+                order_col = 'fecha_evento'
+        except:
+            order_col = 'fecha_evento'
+        
+        # Validar dirección de ordenamiento
+        if order_dir not in ('asc', 'desc'):
+            order_dir = 'desc'
 
-        query = "SELECT * FROM asistencias"
-        condiciones = []
+        # Construir condiciones WHERE con normalización (igual que en api_asistencias)
+        conditions = []
         params = []
 
-        for i, val in enumerate(filtros):
-            if val:
-                condiciones.append(f"{columnas[i]} LIKE ?")
-                params.append(f"%{val}%")
+        # Búsqueda global (normalizada)
+        if global_search:
+            global_normalized = normalize_text(global_search)
+            if USE_POSTGRES:
+                sub = ' OR '.join([f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({c}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s" for c in col_names])
+            else:
+                sub = ' OR '.join([f"LOWER({c}) LIKE ?" for c in col_names])
+            conditions.append(f"({sub})")
+            params += [f"%{global_normalized}%" for _ in col_names]
 
-        if condiciones:
-            query += " WHERE " + " AND ".join(condiciones)
+        # Filtros por columna (normalizados)
+        for i, val in enumerate(col_filters):
+            if val:
+                val_normalized = normalize_text(val)
+                if USE_POSTGRES:
+                    conditions.append(f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({col_names[i]}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s")
+                else:
+                    conditions.append(f"LOWER({col_names[i]}) LIKE ?")
+                params.append(f"%{val_normalized}%")
+
+        # Construir query
+        query = "SELECT * FROM asistencias"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         
-        query += " ORDER BY fecha_evento DESC, nombre_evento"
+        query += f" ORDER BY {order_col} {order_dir}"
         
         # Adaptar query
         query = adapt_query(query)
@@ -1166,8 +1210,9 @@ def exportar():
             df = pd.read_sql_query(query, conn, params=params)
 
         if df.empty:
-            return "No hay datos para exportar", 400
+            return "No hay datos para exportar con los filtros aplicados", 400
 
+        # Convertir programas a nombres completos
         programas_map = get_programas_map()
         
         def convertir_programa(nombre_programa):
@@ -1182,6 +1227,7 @@ def exportar():
         if 'id' in df.columns:
             df = df.drop('id', axis=1)
 
+        # Renombrar columnas para el Excel
         df.rename(columns={
             'nombre_evento': 'Nombre del Evento',
             'dictado_por': 'Dictado Por',
@@ -1205,7 +1251,7 @@ def exportar():
 
         return send_file(output,
                          as_attachment=True,
-                         download_name="asistencias.xlsx",
+                         download_name="asistencias_filtradas.xlsx",
                          mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     except Exception as e:
