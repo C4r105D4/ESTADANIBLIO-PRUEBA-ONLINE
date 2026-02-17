@@ -834,7 +834,6 @@ def panel():
     if "usuario" not in session:
         return redirect(url_for("login"))
     
-    filtro = request.args.get("filtro", "").strip()
     error = request.args.get("error", "").strip()
     success = request.args.get("success", "").strip()
     
@@ -846,44 +845,160 @@ def panel():
     try:
         with get_db_connection() as conn:
             cursor = get_cursor(conn)
-            
-            if filtro:
-                query = adapt_query("""
-                    SELECT nombre_evento, dictado_por, docente, programa_docente,
-                           numero_identificacion, nombre_completo, programa_estudiante,
-                           modalidad, tipo_asistente, sede, fecha_evento
-                    FROM asistencias
-                    WHERE nombre_evento LIKE ? 
-                       OR dictado_por LIKE ?
-                       OR docente LIKE ?
-                       OR programa_docente LIKE ?
-                       OR numero_identificacion LIKE ?
-                       OR nombre_completo LIKE ?
-                       OR programa_estudiante LIKE ?
-                       OR modalidad LIKE ?
-                       OR tipo_asistente LIKE ?
-                       OR sede LIKE ?
-                       OR fecha_evento LIKE ?
-                    ORDER BY fecha_evento DESC, nombre_evento
-                """)
-                cursor.execute(query, tuple([f"%{filtro}%" for _ in range(11)]))
-            else:
-                query = adapt_query("""
-                    SELECT nombre_evento, dictado_por, docente, programa_docente,
-                           numero_identificacion, nombre_completo, programa_estudiante,
-                           modalidad, tipo_asistente, sede, fecha_evento
-                    FROM asistencias
-                    ORDER BY fecha_evento DESC, nombre_evento
-                """)
-                cursor.execute(query)
-            
-            datos = cursor.fetchall()
-            
-        datos_con_nombres_completos = convertir_programas_para_vista(datos)
-        return render_template("panel.html", datos=datos_con_nombres_completos, filtro=filtro, error=error if error else None, success=success if success else None)
+            query = adapt_query("SELECT COUNT(*) as total FROM asistencias")
+            cursor.execute(query)
+            result = cursor.fetchone()
+            total_registros = result['total'] if isinstance(result, dict) else result[0]
+        
+        return render_template("panel.html",
+                               total_registros=total_registros,
+                               error=error if error else None,
+                               success=success if success else None)
     
     except Exception as e:
-        return render_template("panel.html", datos=[], error=f"Error cargando datos: {str(e)}")
+        return render_template("panel.html", total_registros=0, error=f"Error cargando datos: {str(e)}")
+
+
+@app.route("/api/asistencias")
+def api_asistencias():
+    """
+    API para DataTables server-side processing.
+    Recibe parámetros de DataTables (draw, start, length, search, order, columns)
+    y devuelve el JSON que DataTables espera.
+    """
+    if "usuario" not in session:
+        return {"error": "No autorizado"}, 401
+
+    try:
+        # Parámetros estándar de DataTables
+        draw        = int(request.args.get('draw', 1))
+        start       = int(request.args.get('start', 0))
+        length      = int(request.args.get('length', 25))
+        search_val  = request.args.get('search[value]', '').strip()
+
+        # Columnas en el mismo orden que el SELECT y la tabla HTML
+        col_names = [
+            'nombre_evento', 'dictado_por', 'docente', 'programa_docente',
+            'numero_identificacion', 'nombre_completo', 'programa_estudiante',
+            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento'
+        ]
+
+        # Columna y dirección de ordenamiento
+        order_col_idx = int(request.args.get('order[0][column]', 10))
+        order_dir     = request.args.get('order[0][dir]', 'desc')
+        order_col     = col_names[order_col_idx] if 0 <= order_col_idx < len(col_names) else 'fecha_evento'
+        if order_dir not in ('asc', 'desc'):
+            order_dir = 'desc'
+
+        # Filtros individuales por columna
+        col_filters = []
+        for i in range(len(col_names)):
+            val = request.args.get(f'columns[{i}][search][value]', '').strip()
+            col_filters.append(val)
+
+        # Construir WHERE
+        conditions = []
+        params     = []
+
+        if search_val:
+            sub = ' OR '.join([f"{c} LIKE ?" for c in col_names])
+            conditions.append(f"({sub})")
+            params += [f"%{search_val}%" for _ in col_names]
+
+        for i, val in enumerate(col_filters):
+            if val:
+                conditions.append(f"{col_names[i]} LIKE ?")
+                params.append(f"%{val}%")
+
+        where_clause = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+
+            # Total sin filtros
+            cursor.execute(adapt_query("SELECT COUNT(*) as total FROM asistencias"))
+            total_records = cursor.fetchone()
+            total_records = total_records['total'] if isinstance(total_records, dict) else total_records[0]
+
+            # Total con filtros aplicados
+            count_query = adapt_query(f"SELECT COUNT(*) as total FROM asistencias {where_clause}")
+            cursor.execute(count_query, params)
+            filtered_records = cursor.fetchone()
+            filtered_records = filtered_records['total'] if isinstance(filtered_records, dict) else filtered_records[0]
+
+            # Datos paginados
+            data_query = adapt_query(f"""
+                SELECT nombre_evento, dictado_por, docente, programa_docente,
+                       numero_identificacion, nombre_completo, programa_estudiante,
+                       modalidad, tipo_asistente, sede, fecha_evento
+                FROM asistencias
+                {where_clause}
+                ORDER BY {order_col} {order_dir}
+                LIMIT ? OFFSET ?
+            """)
+            cursor.execute(data_query, params + [length, start])
+            rows = cursor.fetchall()
+
+        # Convertir programas a nombres completos
+        programas_map = get_programas_map()
+        data = []
+        for row in rows:
+            if isinstance(row, dict):
+                fila = [
+                    row.get('nombre_evento', '') or '',
+                    row.get('dictado_por', '') or '',
+                    row.get('docente', '') or '',
+                    programas_map.get(row.get('programa_docente', ''), row.get('programa_docente', '') or ''),
+                    row.get('numero_identificacion', '') or '',
+                    row.get('nombre_completo', '') or '',
+                    programas_map.get(row.get('programa_estudiante', ''), row.get('programa_estudiante', '') or ''),
+                    row.get('modalidad', '') or '',
+                    row.get('tipo_asistente', '') or '',
+                    row.get('sede', '') or '',
+                    row.get('fecha_evento', '') or ''
+                ]
+            else:
+                fila = list(row)
+                fila[3]  = programas_map.get(fila[3],  fila[3]  or '')
+                fila[6]  = programas_map.get(fila[6],  fila[6]  or '')
+                fila     = [v or '' for v in fila]
+            data.append(fila)
+
+        return {
+            "draw":            draw,
+            "recordsTotal":    total_records,
+            "recordsFiltered": filtered_records,
+            "data":            data
+        }
+
+    except Exception as e:
+        return {"draw": 1, "recordsTotal": 0, "recordsFiltered": 0, "data": [], "error": str(e)}, 500
+
+
+@app.route("/api/stats/asistencias")
+def api_stats_asistencias():
+    """Devuelve conteos únicos de eventos, programas y sedes para las tarjetas del panel."""
+    if "usuario" not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+
+            cursor.execute("SELECT COUNT(DISTINCT nombre_evento) as total FROM asistencias")
+            eventos = cursor.fetchone()
+            eventos = eventos['total'] if isinstance(eventos, dict) else eventos[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT programa_estudiante) as total FROM asistencias")
+            programas = cursor.fetchone()
+            programas = programas['total'] if isinstance(programas, dict) else programas[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT sede) as total FROM asistencias")
+            sedes = cursor.fetchone()
+            sedes = sedes['total'] if isinstance(sedes, dict) else sedes[0]
+
+        return {"success": True, "eventos": eventos, "programas": programas, "sedes": sedes}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
 
 @app.route("/panel/cargar_excel", methods=["POST"])
 def panel_cargar_excel():
@@ -2038,15 +2153,15 @@ def limpiar_datos_route():
         if resultado['success']:
             return render_template("panel.html",
                                  success=resultado['mensaje'],
-                                 datos=[])
+                                 total_registros=0)
         else:
             return render_template("panel.html",
                                  error=resultado['mensaje'],
-                                 datos=[])
+                                 total_registros=0)
     except Exception as e:
         return render_template("panel.html",
                              error=f"Error al limpiar datos: {str(e)}",
-                             datos=[])
+                             total_registros=0)
 
 
 # ============================================
