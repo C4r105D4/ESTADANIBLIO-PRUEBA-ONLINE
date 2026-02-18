@@ -648,7 +648,7 @@
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-md-12">
+                                    <div class="col-md-4">
                                         <label class="form-label" for="fecha_evento">
                                             <i class="bi bi-calendar3"></i>
                                             Fecha del evento
@@ -660,10 +660,48 @@
                                             class="form-control" 
                                             value="{{ request.form.get('fecha_evento', fecha_actual) if request.form else fecha_actual }}"
                                             required
+                                            readonly
+                                            style="background-color: #f0f4f8; cursor: not-allowed; color: #495057;"
+                                        >
+                                        <div class="field-help">
+                                            <i class="bi bi-lock-fill"></i>
+                                            Fecha actual del sistema (no editable)
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="hora_inicio">
+                                            <i class="bi bi-clock"></i>
+                                            Hora de inicio
+                                        </label>
+                                        <input 
+                                            type="time" 
+                                            name="hora_inicio" 
+                                            id="hora_inicio"
+                                            class="form-control" 
+                                            value="{{ request.form.get('hora_inicio', '') if request.form else '' }}"
+                                            required
                                         >
                                         <div class="field-help">
                                             <i class="bi bi-info-circle"></i>
-                                            Seleccione la fecha en que se realiza el evento
+                                            Hora de inicio de la capacitación
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="hora_fin">
+                                            <i class="bi bi-clock-history"></i>
+                                            Hora de fin
+                                        </label>
+                                        <input 
+                                            type="time" 
+                                            name="hora_fin" 
+                                            id="hora_fin"
+                                            class="form-control" 
+                                            value="{{ request.form.get('hora_fin', '') if request.form else '' }}"
+                                            required
+                                        >
+                                        <div class="field-help">
+                                            <i class="bi bi-info-circle"></i>
+                                            Hora de fin de la capacitación
                                         </div>
                                     </div>
                                 </div>
@@ -965,6 +1003,45 @@
     </script>
     
     <script>
+        // Asegurar que la fecha del evento siempre sea la fecha actual del sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaInput = document.getElementById('fecha_evento');
+            if (fechaInput) {
+                const hoy = new Date();
+                const año = hoy.getFullYear();
+                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                const dia = String(hoy.getDate()).padStart(2, '0');
+                fechaInput.value = `${año}-${mes}-${dia}`;
+                // Evitar que se modifique desde el DOM
+                fechaInput.addEventListener('change', function() {
+                    this.value = `${año}-${mes}-${dia}`;
+                });
+            }
+
+            // Validación: hora_fin debe ser posterior a hora_inicio
+            const horaInicio = document.getElementById('hora_inicio');
+            const horaFin = document.getElementById('hora_fin');
+
+            function validarHoras() {
+                if (horaInicio && horaFin && horaInicio.value && horaFin.value) {
+                    if (horaFin.value <= horaInicio.value) {
+                        horaFin.setCustomValidity('La hora de fin debe ser posterior a la hora de inicio.');
+                        horaFin.classList.add('is-invalid');
+                        horaFin.classList.remove('is-valid');
+                    } else {
+                        horaFin.setCustomValidity('');
+                        horaFin.classList.remove('is-invalid');
+                        horaFin.classList.add('is-valid');
+                    }
+                }
+            }
+
+            if (horaInicio) horaInicio.addEventListener('change', validarHoras);
+            if (horaFin) horaFin.addEventListener('change', validarHoras);
+        });
+    </script>
+    
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('assistanceForm');
             
@@ -1027,6 +1104,28 @@
                 if (field.id === 'numero_identificacion' && field.value.trim() !== '') {
                     const numPattern = /^[0-9]{6,15}$/;
                     isValid = numPattern.test(field.value);
+                }
+                
+                // Validación cruzada hora_fin > hora_inicio
+                if ((field.id === 'hora_inicio' || field.id === 'hora_fin')) {
+                    const horaIni = document.getElementById('hora_inicio');
+                    const horaFin = document.getElementById('hora_fin');
+                    if (horaIni && horaFin && horaIni.value && horaFin.value) {
+                        const horaFinValida = horaFin.value > horaIni.value;
+                        // Actualizar ambos campos según resultado
+                        horaIni.classList.remove('is-valid', 'is-invalid');
+                        horaFin.classList.remove('is-valid', 'is-invalid');
+                        horaIni.classList.add('is-valid');
+                        if (horaFinValida) {
+                            horaFin.classList.add('is-valid');
+                        } else {
+                            horaFin.classList.add('is-invalid');
+                            isValid = false;
+                        }
+                    } else if (field.value.trim() !== '') {
+                        field.classList.add('is-valid');
+                    }
+                    return isValid;
                 }
                 
                 // Aplicar clases de validación solo si el campo tiene contenido

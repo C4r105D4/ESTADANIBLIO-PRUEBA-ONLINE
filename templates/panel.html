@@ -558,11 +558,13 @@
                                     <th><i class="bi bi-people me-1"></i>Tipo de Asistente</th>
                                     <th><i class="bi bi-geo-alt me-1"></i>Sede</th>
                                     <th><i class="bi bi-calendar3 me-1"></i>Fecha Evento</th>
+                                    <th><i class="bi bi-clock me-1"></i>Hora Inicio</th>
+                                    <th><i class="bi bi-clock-history me-1"></i>Hora Fin</th>
                                 </tr>
                                 <!-- Fila 2: Inputs de filtrado por columna -->
                                 <tr class="bg-light">
-                                    <!-- Loop para crear 11 inputs de filtro (uno por columna) -->
-                                    {% for i in range(11) %}
+                                    <!-- Loop para crear 13 inputs de filtro (uno por columna) -->
+                                    {% for i in range(13) %}
                                     <th>
                                         <input 
                                             type="text" 
@@ -590,7 +592,7 @@
                     <!-- Formulario de exportación -->
                     <form id="exportForm" method="GET" action="{{ url_for('exportar') }}" class="d-inline">
                         <!-- Inputs ocultos para enviar los filtros aplicados -->
-                        {% for i in range(11) %}
+                        {% for i in range(13) %}
                         <input type="hidden" name="col{{ i }}" id="col{{ i }}_input">
                         {% endfor %}
                         <!-- Búsqueda global -->
@@ -930,7 +932,9 @@
                     { data: 7 },  // modalidad
                     { data: 8 },  // tipo_asistente
                     { data: 9 },  // sede
-                    { data: 10 } // fecha_evento
+                    { data: 10 }, // fecha_evento
+                    { data: 11 }, // hora_inicio
+                    { data: 12 }  // hora_fin
                 ],
                 columnDefs: [{
                     targets: '_all',
