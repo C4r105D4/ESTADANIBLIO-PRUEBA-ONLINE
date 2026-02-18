@@ -987,9 +987,9 @@ def api_asistencias():
             filtered_records = cursor.fetchone()
             filtered_records = filtered_records['total'] if isinstance(filtered_records, dict) else filtered_records[0]
 
-            # Datos paginados
+            # Datos paginados (incluir id para el botón de edición)
             data_query = adapt_query(f"""
-                SELECT nombre_evento, dictado_por, docente, programa_docente,
+                SELECT id, nombre_evento, dictado_por, docente, programa_docente,
                        numero_identificacion, nombre_completo, programa_estudiante,
                        modalidad, tipo_asistente, sede, fecha_evento,
                        hora_inicio, hora_fin
@@ -1019,13 +1019,29 @@ def api_asistencias():
                     row.get('sede', '') or '',
                     row.get('fecha_evento', '') or '',
                     row.get('hora_inicio', '') or '',
-                    row.get('hora_fin', '') or ''
+                    row.get('hora_fin', '') or '',
+                    row.get('id', '')     # índice 13 — usado por el botón de editar
                 ]
             else:
                 fila = list(row)
-                fila[3]  = programas_map.get(fila[3],  fila[3]  or '')
-                fila[6]  = programas_map.get(fila[6],  fila[6]  or '')
-                fila     = [v or '' for v in fila]
+                # row: id(0), nombre_evento(1)...hora_fin(13)
+                # Reordenar: [1..13, 0] para que data[0]=nombre_evento y data[13]=id
+                fila = [
+                    fila[1] or '',   # nombre_evento
+                    fila[2] or '',   # dictado_por
+                    fila[3] or '',   # docente
+                    programas_map.get(fila[4] or '', fila[4] or ''),  # programa_docente
+                    fila[5] or '',   # numero_identificacion
+                    fila[6] or '',   # nombre_completo
+                    programas_map.get(fila[7] or '', fila[7] or ''),  # programa_estudiante
+                    fila[8] or '',   # modalidad
+                    fila[9] or '',   # tipo_asistente
+                    fila[10] or '',  # sede
+                    fila[11] or '',  # fecha_evento
+                    fila[12] or '',  # hora_inicio
+                    fila[13] or '',  # hora_fin
+                    fila[0]          # id (índice 13 en la respuesta)
+                ]
             data.append(fila)
 
         return {
@@ -1038,6 +1054,164 @@ def api_asistencias():
     except Exception as e:
         return {"draw": 1, "recordsTotal": 0, "recordsFiltered": 0, "data": [], "error": str(e)}, 500
 
+
+
+# ============================================
+# API EDICIÓN DE REGISTRO INDIVIDUAL
+# ============================================
+
+@app.route("/api/asistencia/<int:asistencia_id>", methods=["GET"])
+def api_get_asistencia(asistencia_id):
+    """Devuelve los datos de un registro de asistencia por su ID."""
+    if "usuario" not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+    try:
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+            query = adapt_query("""
+                SELECT id, nombre_evento, dictado_por, docente, programa_docente,
+                       numero_identificacion, nombre_completo, programa_estudiante,
+                       modalidad, tipo_asistente, sede, fecha_evento,
+                       hora_inicio, hora_fin
+                FROM asistencias WHERE id = ?
+            """)
+            cursor.execute(query, (asistencia_id,))
+            row = cursor.fetchone()
+
+        if not row:
+            return {"success": False, "error": "Registro no encontrado"}, 404
+
+        if isinstance(row, dict):
+            fecha = row.get('fecha_evento', '')
+            if fecha and hasattr(fecha, 'strftime'):
+                fecha = fecha.strftime('%Y-%m-%d')
+            registro = {
+                'id':                    row.get('id'),
+                'nombre_evento':         row.get('nombre_evento', ''),
+                'dictado_por':           row.get('dictado_por', ''),
+                'docente':               row.get('docente', ''),
+                'programa_docente':      row.get('programa_docente', ''),
+                'numero_identificacion': row.get('numero_identificacion', ''),
+                'nombre_completo':       row.get('nombre_completo', ''),
+                'programa_estudiante':   row.get('programa_estudiante', ''),
+                'modalidad':             row.get('modalidad', ''),
+                'tipo_asistente':        row.get('tipo_asistente', ''),
+                'sede':                  row.get('sede', ''),
+                'fecha_evento':          fecha,
+                'hora_inicio':           row.get('hora_inicio', '') or '',
+                'hora_fin':              row.get('hora_fin', '') or '',
+            }
+        else:
+            row = list(row)
+            fecha = row[11]
+            if fecha and hasattr(fecha, 'strftime'):
+                fecha = fecha.strftime('%Y-%m-%d')
+            registro = {
+                'id':                    row[0],
+                'nombre_evento':         row[1] or '',
+                'dictado_por':           row[2] or '',
+                'docente':               row[3] or '',
+                'programa_docente':      row[4] or '',
+                'numero_identificacion': row[5] or '',
+                'nombre_completo':       row[6] or '',
+                'programa_estudiante':   row[7] or '',
+                'modalidad':             row[8] or '',
+                'tipo_asistente':        row[9] or '',
+                'sede':                  row[10] or '',
+                'fecha_evento':          fecha or '',
+                'hora_inicio':           row[12] or '',
+                'hora_fin':              row[13] or '',
+            }
+
+        return {"success": True, "registro": registro}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/api/asistencia/<int:asistencia_id>", methods=["PUT"])
+def api_put_asistencia(asistencia_id):
+    """Actualiza un registro de asistencia por su ID."""
+    if "usuario" not in session:
+        return {"success": False, "error": "No autorizado"}, 401
+
+    from flask import json as flask_json
+    try:
+        datos = request.get_json(force=True)
+        if not datos:
+            return {"success": False, "error": "No se recibieron datos"}, 400
+
+        campos_requeridos = [
+            'nombre_evento', 'dictado_por', 'docente', 'programa_docente',
+            'numero_identificacion', 'nombre_completo', 'programa_estudiante',
+            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento'
+        ]
+        for campo in campos_requeridos:
+            if not datos.get(campo, '').strip():
+                return {"success": False, "error": f"El campo '{campo}' es requerido"}, 400
+
+        # Validar formato de fecha
+        try:
+            datetime.strptime(datos['fecha_evento'], "%Y-%m-%d")
+        except ValueError:
+            return {"success": False, "error": "Formato de fecha inválido (use YYYY-MM-DD)"}, 400
+
+        hora_inicio = datos.get('hora_inicio', '') or None
+        hora_fin    = datos.get('hora_fin', '') or None
+
+        # Validar horas si ambas se proporcionan
+        if hora_inicio and hora_fin and hora_fin <= hora_inicio:
+            return {"success": False, "error": "La hora de fin debe ser posterior a la hora de inicio"}, 400
+
+        with get_db_connection() as conn:
+            cursor = get_cursor(conn)
+
+            # Verificar que el registro existe
+            cursor.execute(adapt_query("SELECT id FROM asistencias WHERE id = ?"), (asistencia_id,))
+            if not cursor.fetchone():
+                return {"success": False, "error": "Registro no encontrado"}, 404
+
+            query = adapt_query("""
+                UPDATE asistencias SET
+                    nombre_evento          = ?,
+                    dictado_por            = ?,
+                    docente                = ?,
+                    programa_docente       = ?,
+                    numero_identificacion  = ?,
+                    nombre_completo        = ?,
+                    programa_estudiante    = ?,
+                    modalidad              = ?,
+                    tipo_asistente         = ?,
+                    sede                   = ?,
+                    fecha_evento           = ?,
+                    hora_inicio            = ?,
+                    hora_fin               = ?
+                WHERE id = ?
+            """)
+            cursor.execute(query, (
+                datos['nombre_evento'].strip(),
+                datos['dictado_por'].strip(),
+                datos['docente'].strip(),
+                datos['programa_docente'].strip(),
+                datos['numero_identificacion'].strip(),
+                datos['nombre_completo'].strip(),
+                datos['programa_estudiante'].strip(),
+                datos['modalidad'].strip(),
+                datos['tipo_asistente'].strip(),
+                datos['sede'].strip(),
+                datos['fecha_evento'].strip(),
+                hora_inicio,
+                hora_fin,
+                asistencia_id
+            ))
+            conn.commit()
+
+        return {"success": True, "message": "Registro actualizado correctamente"}
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}, 500
 
 @app.route("/api/stats/asistencias")
 def api_stats_asistencias():
