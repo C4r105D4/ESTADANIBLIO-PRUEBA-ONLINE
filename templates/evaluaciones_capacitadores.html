@@ -299,7 +299,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('estadisticas_avanzadas') }}">
+                        <a class="nav-link" href="{{ url_for('estadisticas') }}">
                             <i class="bi bi-graph-up me-1"></i>Estadísticas
                         </a>
                     </li>
@@ -444,11 +444,11 @@
                         {% for eval in evaluaciones %}
                         <tr>
                             <td>
-                                {% if eval['fecha_evaluacion'] %}
-                                    {% if eval['fecha_evaluacion'] is string %}
-                                        {{ eval['fecha_evaluacion'][:10] }}
+                                {% if eval['fecha_registro'] %}
+                                    {% if eval['fecha_registro'] is string %}
+                                        {{ eval['fecha_registro'][:10] }}
                                     {% else %}
-                                        {{ eval['fecha_evaluacion'].strftime('%Y-%m-%d') }}
+                                        {{ eval['fecha_registro'].strftime('%Y-%m-%d') }}
                                     {% endif %}
                                 {% else %}
                                     -
