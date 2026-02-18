@@ -133,6 +133,8 @@ def asistencia_to_tuple(asistencia):
             asistencia.get('tipo_asistente', ''),
             asistencia.get('sede', ''),
             fecha_evento,
+            asistencia.get('hora_inicio', ''),
+            asistencia.get('hora_fin', ''),
             fecha_registro
         )
     else:
@@ -353,6 +355,8 @@ def init_db():
                 tipo_asistente {TEXT} NOT NULL,
                 sede {TEXT} NOT NULL,
                 fecha_evento {TEXT} NOT NULL,
+                hora_inicio {TEXT},
+                hora_fin {TEXT},
                 fecha_registro {TIMESTAMP_DEFAULT}
             )
         """)
@@ -370,6 +374,23 @@ def init_db():
                     SET fecha_evento = DATE(fecha_registro) 
                     WHERE fecha_evento IS NULL
                 """)
+            
+            # Migración: agregar hora_inicio y hora_fin si no existen
+            if 'hora_inicio' not in columnas:
+                cursor.execute("ALTER TABLE asistencias ADD COLUMN hora_inicio TEXT")
+                print("✅ Columna hora_inicio agregada a asistencias (SQLite)")
+            if 'hora_fin' not in columnas:
+                cursor.execute("ALTER TABLE asistencias ADD COLUMN hora_fin TEXT")
+                print("✅ Columna hora_fin agregada a asistencias (SQLite)")
+        else:
+            # PostgreSQL: agregar columnas si no existen
+            cursor.execute("""
+                ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS hora_inicio TEXT
+            """)
+            cursor.execute("""
+                ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS hora_fin TEXT
+            """)
+            print("✅ Columnas hora_inicio y hora_fin verificadas (PostgreSQL)")
         
         # Crear índice UNIQUE para prevenir duplicados
         try:
@@ -661,6 +682,10 @@ def formulario():
             if not fecha_evento:
                 fecha_evento = datetime.now().strftime("%Y-%m-%d")
             
+            # Obtener horas de inicio y fin de la capacitación
+            hora_inicio = request.form.get("hora_inicio", "").strip()
+            hora_fin = request.form.get("hora_fin", "").strip()
+            
             # Validar formato de fecha
             try:
                 datetime.strptime(fecha_evento, "%Y-%m-%d")
@@ -705,15 +730,16 @@ def formulario():
                         INSERT INTO asistencias (
                             nombre_evento, dictado_por, docente, programa_docente,
                             numero_identificacion, nombre_completo, programa_estudiante,
-                            modalidad, tipo_asistente, sede, fecha_evento
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            modalidad, tipo_asistente, sede, fecha_evento,
+                            hora_inicio, hora_fin
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         RETURNING id
                     """
                     cursor.execute(query_insert, (datos["nombre_evento"], datos["dictado_por"], datos["docente"], 
                           datos["programa_docente"], datos["numero_identificacion"], 
                           datos["nombre_completo"], datos["programa_estudiante"],
                           datos["modalidad"], datos["tipo_asistente"], datos["sede"], 
-                          fecha_evento))
+                          fecha_evento, hora_inicio or None, hora_fin or None))
                     asistencia_id = cursor.fetchone()['id']
                 else:
                     # SQLite: usar lastrowid
@@ -721,14 +747,15 @@ def formulario():
                         INSERT INTO asistencias (
                             nombre_evento, dictado_por, docente, programa_docente,
                             numero_identificacion, nombre_completo, programa_estudiante,
-                            modalidad, tipo_asistente, sede, fecha_evento
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            modalidad, tipo_asistente, sede, fecha_evento,
+                            hora_inicio, hora_fin
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """
                     cursor.execute(query_insert, (datos["nombre_evento"], datos["dictado_por"], datos["docente"], 
                           datos["programa_docente"], datos["numero_identificacion"], 
                           datos["nombre_completo"], datos["programa_estudiante"],
                           datos["modalidad"], datos["tipo_asistente"], datos["sede"], 
-                          fecha_evento))
+                          fecha_evento, hora_inicio or None, hora_fin or None))
                     asistencia_id = cursor.lastrowid
                 
                 conn.commit()
@@ -901,7 +928,8 @@ def api_asistencias():
         col_names = [
             'nombre_evento', 'dictado_por', 'docente', 'programa_docente',
             'numero_identificacion', 'nombre_completo', 'programa_estudiante',
-            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento'
+            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento',
+            'hora_inicio', 'hora_fin'
         ]
 
         # Columna y dirección de ordenamiento
@@ -963,7 +991,8 @@ def api_asistencias():
             data_query = adapt_query(f"""
                 SELECT nombre_evento, dictado_por, docente, programa_docente,
                        numero_identificacion, nombre_completo, programa_estudiante,
-                       modalidad, tipo_asistente, sede, fecha_evento
+                       modalidad, tipo_asistente, sede, fecha_evento,
+                       hora_inicio, hora_fin
                 FROM asistencias
                 {where_clause}
                 ORDER BY {order_col} {order_dir}
@@ -988,7 +1017,9 @@ def api_asistencias():
                     row.get('modalidad', '') or '',
                     row.get('tipo_asistente', '') or '',
                     row.get('sede', '') or '',
-                    row.get('fecha_evento', '') or ''
+                    row.get('fecha_evento', '') or '',
+                    row.get('hora_inicio', '') or '',
+                    row.get('hora_fin', '') or ''
                 ]
             else:
                 fila = list(row)
@@ -1141,8 +1172,8 @@ def exportar():
         return redirect(url_for("login"))
 
     try:
-        # Obtener filtros de columnas (11 columnas)
-        col_filters = [request.args.get(f"col{i}", "").strip() for i in range(11)]
+        # Obtener filtros de columnas (13 columnas)
+        col_filters = [request.args.get(f"col{i}", "").strip() for i in range(13)]
         
         # Obtener búsqueda global
         global_search = request.args.get("global_search", "").strip()
@@ -1155,7 +1186,8 @@ def exportar():
         col_names = [
             'nombre_evento', 'dictado_por', 'docente', 'programa_docente',
             'numero_identificacion', 'nombre_completo', 'programa_estudiante',
-            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento'
+            'modalidad', 'tipo_asistente', 'sede', 'fecha_evento',
+            'hora_inicio', 'hora_fin'
         ]
         
         # Validar índice de columna de ordenamiento
@@ -1182,7 +1214,7 @@ def exportar():
             if USE_POSTGRES:
                 sub = ' OR '.join([f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({c}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s" for c in col_names])
             else:
-                sub = ' OR '.join([f"LOWER({c}) LIKE ?" for c in col_names])
+                sub = ' OR '.join([f"LOWER(COALESCE({c},'')) LIKE ?" for c in col_names])
             conditions.append(f"({sub})")
             params += [f"%{global_normalized}%" for _ in col_names]
 
@@ -1193,7 +1225,7 @@ def exportar():
                 if USE_POSTGRES:
                     conditions.append(f"LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({col_names[i]}, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE %s")
                 else:
-                    conditions.append(f"LOWER({col_names[i]}) LIKE ?")
+                    conditions.append(f"LOWER(COALESCE({col_names[i]},'')) LIKE ?")
                 params.append(f"%{val_normalized}%")
 
         # Construir query
@@ -1240,6 +1272,8 @@ def exportar():
             'tipo_asistente': 'Tipo de Asistente',
             'sede': 'Sede',
             'fecha_evento': 'Fecha del Evento',
+            'hora_inicio': 'Hora de Inicio',
+            'hora_fin': 'Hora de Fin',
             'fecha_registro': 'Fecha de Registro'
         }, inplace=True)
 
