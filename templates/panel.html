@@ -333,6 +333,26 @@
                 padding: 0.3rem 0.5rem;
             }
         }
+
+        /* ===== BOTÓN EDITAR EN FILA ===== */
+        .btn-edit-row {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-size: 0.78rem;
+            padding: 0.3rem 0.75rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .btn-edit-row:hover {
+            background: linear-gradient(45deg, #5a6fd6, #6a3d90);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102,126,234,0.4);
+        }
+        .btn-edit-row:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -560,10 +580,11 @@
                                     <th><i class="bi bi-calendar3 me-1"></i>Fecha Evento</th>
                                     <th><i class="bi bi-clock me-1"></i>Hora Inicio</th>
                                     <th><i class="bi bi-clock-history me-1"></i>Hora Fin</th>
+                                    <th class="text-center"><i class="bi bi-pencil-square me-1"></i>Acciones</th>
                                 </tr>
                                 <!-- Fila 2: Inputs de filtrado por columna -->
                                 <tr class="bg-light">
-                                    <!-- Loop para crear 13 inputs de filtro (uno por columna) -->
+                                    <!-- 13 inputs de filtro + 1 celda vacía para columna Acciones -->
                                     {% for i in range(13) %}
                                     <th>
                                         <input 
@@ -574,6 +595,7 @@
                                         >
                                     </th>
                                     {% endfor %}
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -755,6 +777,129 @@
         </div>
     </div>
 
+    <!-- ===== MODAL DE EDICIÓN DE REGISTRO ===== -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title" id="editModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        Editar Registro de Asistencia
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="edit_id">
+
+                    <h6 class="fw-bold text-muted mb-3 border-bottom pb-2">
+                        <i class="bi bi-calendar-event me-1" style="color:#667eea;"></i> Información del Evento
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_nombre_evento">Tipo de Evento</label>
+                            <select class="form-select" id="edit_nombre_evento">
+                                <option value="Bases de Datos">Bases de Datos</option>
+                                <option value="Escritura Académica">Escritura Académica</option>
+                                <option value="Estilo APA">Estilo APA</option>
+                                <option value="Gestor bibliográfico">Gestor bibliográfico</option>
+                                <option value="Inducción de Biblioteca">Inducción de Biblioteca</option>
+                                <option value="Visibilidad Científica">Visibilidad Científica</option>
+                                <option value="Visita de Grupos">Visita de Grupos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_dictado_por">Dictado por</label>
+                            <select class="form-select" id="edit_dictado_por">
+                                <option value="Laura Molina C.">Laura Molina C.</option>
+                                <option value="Tatiana Bastidas C.">Tatiana Bastidas C.</option>
+                                <option value="Liliana Zapata V.">Liliana Zapata V.</option>
+                                <option value="Daniela Pacheco P.">Daniela Pacheco P.</option>
+                                <option value="Álvaro Osorio T.">Álvaro Osorio T.</option>
+                                <option value="No Aplica">No Aplica</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="edit_fecha_evento">Fecha del Evento</label>
+                            <input type="date" class="form-control" id="edit_fecha_evento">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="edit_hora_inicio">Hora de Inicio</label>
+                            <input type="time" class="form-control" id="edit_hora_inicio">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="edit_hora_fin">Hora de Fin</label>
+                            <input type="time" class="form-control" id="edit_hora_fin">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-muted mb-3 border-bottom pb-2 mt-4">
+                        <i class="bi bi-person-workspace me-1" style="color:#667eea;"></i> Docente Acompañante
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_docente">Nombre del Docente</label>
+                            <input type="text" class="form-control" id="edit_docente" maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_programa_docente">Programa del Docente</label>
+                            <input type="text" class="form-control" id="edit_programa_docente" maxlength="200">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-muted mb-3 border-bottom pb-2 mt-4">
+                        <i class="bi bi-person-badge-fill me-1" style="color:#667eea;"></i> Información del Asistente
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_numero_identificacion">Número de Identificación</label>
+                            <input type="text" class="form-control" id="edit_numero_identificacion" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_nombre_completo">Nombre Completo</label>
+                            <input type="text" class="form-control" id="edit_nombre_completo" maxlength="200">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_programa_estudiante">Programa del Estudiante</label>
+                            <input type="text" class="form-control" id="edit_programa_estudiante" maxlength="200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_tipo_asistente">Tipo de Asistente</label>
+                            <input type="text" class="form-control" id="edit_tipo_asistente" maxlength="100">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_modalidad">Modalidad</label>
+                            <select class="form-select" id="edit_modalidad">
+                                <option value="Presencial">Presencial</option>
+                                <option value="A Distancia">A Distancia</option>
+                                <option value="Virtual">Virtual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="edit_sede">Sede</label>
+                            <input type="text" class="form-control" id="edit_sede" maxlength="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn rounded-pill text-white" id="saveEditBtn"
+                            style="background: linear-gradient(45deg, #667eea, #764ba2);">
+                        <i class="bi bi-check-circle me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <style>
         /* Estilos para la zona de carga en el modal */
         .upload-zone-panel {
@@ -934,7 +1079,18 @@
                     { data: 9 },  // sede
                     { data: 10 }, // fecha_evento
                     { data: 11 }, // hora_inicio
-                    { data: 12 }  // hora_fin
+                    { data: 12 }, // hora_fin
+                    {             // columna acciones (no viene del servidor)
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function(data, type, row) {
+                            var id = row[13]; // id del registro
+                            return '<button class="btn btn-sm btn-edit-row rounded-pill" data-id="' + id + '" title="Editar registro">' +
+                                   '<i class="bi bi-pencil-fill me-1"></i>Editar</button>';
+                        }
+                    }
                 ],
                 columnDefs: [{
                     targets: '_all',
@@ -1003,6 +1159,115 @@
                 $(this).addClass('table-active');
             }).on('mouseleave', 'tr', function() {
                 $(this).removeClass('table-active');
+            });
+
+            /* ===== EDICIÓN DE REGISTROS ===== */
+
+            /**
+             * Abre el modal al hacer clic en el botón de editar de una fila.
+             * Carga los datos actuales del registro vía AJAX y los rellena en el modal.
+             */
+            $('#tablaAsistencias tbody').on('click', '.btn-edit-row', function() {
+                var id = $(this).data('id');
+
+                // Mostrar loading en el botón mientras carga
+                var $btn = $(this);
+                $btn.html('<span class="spinner-border spinner-border-sm"></span>').prop('disabled', true);
+
+                $.getJSON('/api/asistencia/' + id, function(data) {
+                    if (data.success) {
+                        var r = data.registro;
+                        $('#edit_id').val(r.id);
+                        $('#edit_nombre_evento').val(r.nombre_evento);
+                        $('#edit_dictado_por').val(r.dictado_por);
+                        $('#edit_fecha_evento').val(r.fecha_evento);
+                        $('#edit_hora_inicio').val(r.hora_inicio || '');
+                        $('#edit_hora_fin').val(r.hora_fin || '');
+                        $('#edit_docente').val(r.docente);
+                        $('#edit_programa_docente').val(r.programa_docente);
+                        $('#edit_numero_identificacion').val(r.numero_identificacion);
+                        $('#edit_nombre_completo').val(r.nombre_completo);
+                        $('#edit_programa_estudiante').val(r.programa_estudiante);
+                        $('#edit_tipo_asistente').val(r.tipo_asistente);
+                        $('#edit_modalidad').val(r.modalidad);
+                        $('#edit_sede').val(r.sede);
+
+                        var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                        editModal.show();
+                    } else {
+                        showToast('Error al cargar el registro: ' + (data.error || ''), 'error');
+                    }
+                }).fail(function() {
+                    showToast('Error de conexión al cargar el registro.', 'error');
+                }).always(function() {
+                    $btn.html('<i class="bi bi-pencil-fill me-1"></i>Editar').prop('disabled', false);
+                });
+            });
+
+            /**
+             * Guarda los cambios del modal vía AJAX al hacer clic en "Guardar Cambios".
+             */
+            $('#saveEditBtn').on('click', function() {
+                var id = $('#edit_id').val();
+                if (!id) return;
+
+                // Validación básica
+                var horaIni = $('#edit_hora_inicio').val();
+                var horaFin = $('#edit_hora_fin').val();
+                if (horaIni && horaFin && horaFin <= horaIni) {
+                    showToast('La hora de fin debe ser posterior a la hora de inicio.', 'error');
+                    $('#edit_hora_fin').addClass('is-invalid').focus();
+                    return;
+                }
+                $('#edit_hora_fin').removeClass('is-invalid');
+
+                var $btn = $(this);
+                $btn.html('<span class="spinner-border spinner-border-sm me-1"></span>Guardando...').prop('disabled', true);
+
+                var payload = {
+                    nombre_evento:          $('#edit_nombre_evento').val(),
+                    dictado_por:            $('#edit_dictado_por').val(),
+                    fecha_evento:           $('#edit_fecha_evento').val(),
+                    hora_inicio:            horaIni,
+                    hora_fin:               horaFin,
+                    docente:                $('#edit_docente').val().trim(),
+                    programa_docente:       $('#edit_programa_docente').val().trim(),
+                    numero_identificacion:  $('#edit_numero_identificacion').val().trim(),
+                    nombre_completo:        $('#edit_nombre_completo').val().trim(),
+                    programa_estudiante:    $('#edit_programa_estudiante').val().trim(),
+                    tipo_asistente:         $('#edit_tipo_asistente').val().trim(),
+                    modalidad:              $('#edit_modalidad').val(),
+                    sede:                   $('#edit_sede').val().trim()
+                };
+
+                $.ajax({
+                    url: '/api/asistencia/' + id,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function(resp) {
+                        if (resp.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                            table.ajax.reload(null, false); // Recargar sin resetear paginación
+                            showToast('Registro actualizado correctamente.', 'success');
+                        } else {
+                            showToast('Error al guardar: ' + (resp.error || ''), 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        var msg = 'Error de conexión al guardar.';
+                        try { msg = JSON.parse(xhr.responseText).error || msg; } catch(e) {}
+                        showToast(msg, 'error');
+                    },
+                    complete: function() {
+                        $btn.html('<i class="bi bi-check-circle me-1"></i> Guardar Cambios').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Limpiar validación al cerrar el modal
+            document.getElementById('editModal').addEventListener('hidden.bs.modal', function() {
+                $('#edit_hora_fin').removeClass('is-invalid');
             });
 
             {% else %}
