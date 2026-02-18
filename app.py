@@ -2261,7 +2261,7 @@ def ver_evaluaciones_capacitadores():
                     e.manejo_grupo,
                     e.solucion_inquietudes,
                     e.comentarios,
-                    e.fecha_evaluacion,
+                    e.fecha_registro,
                     a.nombre_evento,
                     a.dictado_por as capacitador,
                     a.fecha_evento,
@@ -2272,7 +2272,7 @@ def ver_evaluaciones_capacitadores():
                            e.manejo_grupo + e.solucion_inquietudes) / 5.0, 2) as promedio_individual
                 FROM evaluaciones_capacitaciones e
                 INNER JOIN asistencias a ON e.asistencia_id = a.id
-                ORDER BY e.fecha_evaluacion DESC
+                ORDER BY e.fecha_registro DESC
             """)
             cursor.execute(query_evaluaciones)
             evaluaciones = cursor.fetchall()
