@@ -1433,6 +1433,10 @@ def exportar():
         if 'id' in df.columns:
             df = df.drop('id', axis=1)
 
+        # Eliminar columnas de hora y fecha de registro del Excel
+        cols_excluir = ['hora_inicio', 'hora_fin', 'fecha_registro']
+        df = df.drop(columns=[c for c in cols_excluir if c in df.columns])
+
         # Renombrar columnas para el Excel
         df.rename(columns={
             'nombre_evento': 'Nombre del Evento',
@@ -1459,7 +1463,7 @@ def exportar():
 
         return send_file(output,
                          as_attachment=True,
-                         download_name="asistencias_filtradas.xlsx",
+                         download_name="asistencias.xlsx",
                          mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     except Exception as e:
