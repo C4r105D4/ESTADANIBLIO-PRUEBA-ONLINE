@@ -16,12 +16,10 @@ if DATABASE_URL:
     import psycopg2
     from psycopg2.extras import RealDictCursor
     USE_POSTGRES = True
-    print("🐘 Usando PostgreSQL en producción")
 else:
     # SQLite en desarrollo
     import sqlite3
     USE_POSTGRES = False
-    print("🗄️ Usando SQLite en desarrollo")
 
 #Configuración de la app flask
 app = Flask(__name__)
@@ -278,7 +276,6 @@ def init_db():
         TEXT = "TEXT"
         TIMESTAMP_DEFAULT = "DATETIME DEFAULT CURRENT_TIMESTAMP"
     
-    print(f"📊 Iniciando creación de tablas...")
     
     # CRÍTICO: Usar conexión explícita, no context manager
     conn = get_db_connection()
@@ -294,7 +291,6 @@ def init_db():
                 created_at {TIMESTAMP_DEFAULT}
             )
         """)
-        print("✅ Tabla usuarios")
 
         # Tabla de programas académicos
         cursor.execute(f"""
@@ -306,7 +302,6 @@ def init_db():
                 fecha_modificacion {TIMESTAMP_DEFAULT}
             )
         """)
-        print("✅ Tabla programas")
 
         # Tabla de modalidades
         cursor.execute(f"""
@@ -318,7 +313,6 @@ def init_db():
                 fecha_modificacion {TIMESTAMP_DEFAULT}
             )
         """)
-        print("✅ Tabla modalidades")
         
         # Insertar modalidades por defecto (solo si no existen)
         modalidades_default = ['Presencial', 'A Distancia', 'Virtual']
@@ -338,7 +332,6 @@ def init_db():
             except:
                 pass
         
-        print("✅ Modalidades por defecto verificadas")
 
         # Tabla de asistencias (capacitaciones)
         cursor.execute(f"""
@@ -360,7 +353,6 @@ def init_db():
                 fecha_registro {TIMESTAMP_DEFAULT}
             )
         """)
-        print("✅ Tabla asistencias")
         
         # Verificar columna fecha_evento en asistencias (solo para SQLite)
         if not USE_POSTGRES:
@@ -378,10 +370,8 @@ def init_db():
             # Migración: agregar hora_inicio y hora_fin si no existen
             if 'hora_inicio' not in columnas:
                 cursor.execute("ALTER TABLE asistencias ADD COLUMN hora_inicio TEXT")
-                print("✅ Columna hora_inicio agregada a asistencias (SQLite)")
             if 'hora_fin' not in columnas:
                 cursor.execute("ALTER TABLE asistencias ADD COLUMN hora_fin TEXT")
-                print("✅ Columna hora_fin agregada a asistencias (SQLite)")
         else:
             # PostgreSQL: agregar columnas si no existen
             cursor.execute("""
@@ -390,7 +380,6 @@ def init_db():
             cursor.execute("""
                 ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS hora_fin TEXT
             """)
-            print("✅ Columnas hora_inicio y hora_fin verificadas (PostgreSQL)")
         
         # Crear índice UNIQUE para prevenir duplicados
         try:
@@ -419,7 +408,6 @@ def init_db():
             duplicados_count = result['count']
             
             if duplicados_count > 0:
-                print(f"⚠️ Limpiando {duplicados_count} duplicados...")
                 
                 # Eliminar duplicados manteniendo solo el registro más antiguo (menor ID)
                 query_delete = adapt_query("""
@@ -441,11 +429,9 @@ def init_db():
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_asistencias_unique 
                 ON asistencias(numero_identificacion, nombre_evento, fecha_evento)
             """)
-            print("✅ Índice UNIQUE")
             
         except Exception as e:
             # El índice ya existe o hay otro error
-            print(f"ℹ️ Índice: {str(e)}")
             pass
         
         # Tabla de inversiones institucionales
@@ -462,7 +448,6 @@ def init_db():
                 UNIQUE(año)
             )
         """)
-        print("✅ Tabla inversiones_institucionales")
         
         # Tabla de inversiones por programa
         cursor.execute(f"""
@@ -483,7 +468,6 @@ def init_db():
                 UNIQUE(año, programa)
             )
         """)
-        print("✅ Tabla inversiones_programas")
         
         # Tabla de evaluaciones de capacitaciones
         cursor.execute(f"""
@@ -505,7 +489,6 @@ def init_db():
                 UNIQUE(asistencia_id)
             )
         """)
-        print("✅ Tabla evaluaciones_capacitaciones")
         
         # Migración: Actualizar estructura de evaluaciones para nueva versión
         try:
@@ -536,7 +519,6 @@ def init_db():
                             ALTER TABLE evaluaciones_capacitaciones 
                             DROP COLUMN IF EXISTS {columna} CASCADE
                         """)
-                        print(f"✅ Columna {columna} eliminada")
                 
                 # Recrear el promedio con la fórmula correcta si es necesario
                 if 'promedio' in columnas_existentes:
@@ -551,9 +533,7 @@ def init_db():
                              manejo_grupo + solucion_inquietudes) / 5.0
                         ) STORED
                     """)
-                    print("✅ Promedio recalculado con nueva fórmula")
                 
-                print("✅ Migración PostgreSQL completada")
             else:
                 # SQLite: Solo agregar comentarios si no existe
                 cursor.execute("PRAGMA table_info(evaluaciones_capacitaciones)")
@@ -561,26 +541,21 @@ def init_db():
                 
                 if 'comentarios' not in columnas:
                     cursor.execute("ALTER TABLE evaluaciones_capacitaciones ADD COLUMN comentarios TEXT")
-                    print("✅ Columna comentarios agregada")
         except Exception as e:
-            print(f"⚠️ Migración evaluaciones: {str(e)}")
             # No hacer raise para permitir que la app continúe
             pass
         
         # CRÍTICO: Commit explícito
         conn.commit()
-        print("✅ COMMIT ejecutado - Todas las tablas guardadas en la base de datos")
         
     except Exception as e:
         conn.rollback()
-        print(f"❌ ERROR al crear tablas: {str(e)}")
         raise e
     finally:
         cursor.close()
         conn.close()
     
     db_type = "PostgreSQL" if USE_POSTGRES else "SQLite"
-    print(f"🎉 Base de datos inicializada ({db_type})")
     return mensaje_limpieza
 
 # --- Rutas ---
@@ -1317,7 +1292,6 @@ def panel_cargar_excel():
                             errores.append(f"Fila {index + 2}: {row['nombre_completo']} - {row['nombre_evento']} - {row['fecha_evento']}")
                     else:
                         # Otros errores (datos inválidos, etc.)
-                        print(f"Error insertando fila {index + 2}: {str(e)}")
                         errores.append(f"Fila {index + 2}: Error - {str(e)}")
                     continue
             
@@ -1335,7 +1309,6 @@ def panel_cargar_excel():
 
         
     except Exception as e:
-        print(f"Error cargando Excel: {str(e)}")
         import traceback
         traceback.print_exc()
         return redirect(url_for('panel', error=f'Error procesando el archivo: {str(e)}'))
@@ -1463,7 +1436,7 @@ def exportar():
 
         return send_file(output,
                          as_attachment=True,
-                         download_name="asistencias.xlsx",
+                         download_name="asistencias_filtradas.xlsx",
                          mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     except Exception as e:
@@ -1929,7 +1902,6 @@ def estadisticas():
                              })
     
     except Exception as e:
-        print(f"Error en estadísticas: {str(e)}")
         import traceback
         traceback.print_exc()
         anos_ventana, ano_inicio_ventana, ano_fin_ventana = get_ventana_anos(5)
@@ -2506,7 +2478,6 @@ def ver_evaluaciones_capacitadores():
                              promedio_global=promedio_global)
     
     except Exception as e:
-        print(f"Error al obtener evaluaciones: {str(e)}")
         import traceback
         traceback.print_exc()
         return render_template("panel.html",
@@ -2644,17 +2615,13 @@ def init_db_route():
 
 # CRÍTICO: Inicializar DB SIEMPRE (incluso con gunicorn)
 # Esto se ejecuta al importar el módulo, antes de que gunicorn inicie
-print("🔄 Inicializando base de datos...")
 try:
     mensaje_limpieza_duplicados = init_db()
     if mensaje_limpieza_duplicados:
         mensaje_limpieza_global = mensaje_limpieza_duplicados
-        print(f"ℹ️ {mensaje_limpieza_duplicados}")
 except Exception as e:
-    print(f"❌ Error al inicializar DB: {str(e)}")
     import traceback
     traceback.print_exc()
-    print("⚠️ IMPORTANTE: Usa /admin/init-db para inicializar manualmente")
 
 
 if __name__ == "__main__":
