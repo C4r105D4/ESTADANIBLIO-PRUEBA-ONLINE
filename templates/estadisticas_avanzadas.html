@@ -311,7 +311,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        /* ========== ESTILOS PARA BOTONES DE AÑOS INTERACTIVOS ========== */
+        /* ========== ESTILOS PARA BOTONES DE AÑOS ========== */
         .btn-year-filter {
             background: white;
             border: 2px solid #dee2e6;
@@ -344,17 +344,9 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
-        
-        .btn-year-filter i.bi-star-fill {
-            color: #ffc107;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-        /* ================================================================ */
+        /* =================================================== */
+
+
     </style>
 </head>
 <body>
@@ -398,54 +390,30 @@
             </p>
         </div>
 
-        <!-- ========== INDICADOR DE VENTANA DE AÑOS (INTERACTIVO) ========== -->
-        {% if ventana_anos %}
+        {% if anos_con_datos %}
         <div class="alert alert-info d-flex align-items-center justify-content-between mb-4" role="alert" style="border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <div class="d-flex align-items-center flex-grow-1">
+            <div class="d-flex align-items-center">
                 <i class="bi bi-calendar-range me-3" style="font-size: 1.5rem;"></i>
                 <div>
-                    <strong style="font-size: 1.05rem;">Ventana de Datos Activa</strong>
-                    <p class="mb-0 mt-1" style="font-size: 0.95rem;">
-                        Mostrando estadísticas de los últimos 5 años: 
-                        <span class="badge bg-primary px-3 py-2 ms-2">{{ ventana_anos.ano_inicio }} - {{ ventana_anos.ano_fin }}</span>
-                        {% if not filtros.fecha_inicio and not filtros.fecha_fin %}
-                            <small class="ms-2 text-muted fst-italic">(Filtro automático activo)</small>
-                        {% endif %}
-                    </p>
-                    <small class="text-muted d-block mt-1">
-                        <i class="bi bi-hand-index me-1"></i>
-                        Haz clic en un año para filtrar
-                    </small>
+                    <strong style="font-size: 1.05rem;">Filtro rápido por año</strong>
+                    <p class="mb-0 mt-1 text-muted" style="font-size: 0.9rem;">Selecciona un año o usa los filtros de fecha</p>
                 </div>
             </div>
-            
-            <!-- Badges de años INTERACTIVOS -->
             <div class="d-flex gap-2 flex-wrap justify-content-end">
-                <!-- Botón "Todos los años" -->
-                <button type="button" 
-                        class="btn-year-filter {% if not filtros.fecha_inicio and not filtros.fecha_fin %}active{% endif %}"
-                        onclick="filtrarPorAnio('todos')"
-                        title="Mostrar todos los años disponibles">
-                    <i class="bi bi-calendar-week me-1"></i>
-                    Todos
-                </button>
-                
-                <!-- Botones de años individuales -->
-                {% for ano in ventana_anos.anos %}
-                <button type="button" 
+                {% for ano in anos_con_datos %}
+                <button type="button"
                         class="btn-year-filter {% if filtros.fecha_inicio == ano|string + '-01-01' and filtros.fecha_fin == ano|string + '-12-31' %}active{% endif %}"
                         onclick="filtrarPorAnio({{ ano }})"
-                        title="Filtrar solo el año {{ ano }}">
+                        title="Ver solo {{ ano }}">
                     {{ ano }}
-                    {% if ano == ventana_anos.ano_fin %}
-                    <i class="bi bi-star-fill ms-1" style="font-size: 0.7rem;"></i>
+                    {% if ano == anos_con_datos[-1] %}
+                    <i class="bi bi-star-fill ms-1" style="font-size: 0.7rem; color: #ffc107;"></i>
                     {% endif %}
                 </button>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
-        <!-- ================================================== -->
 
         {% if error %}
         <div class="alert alert-danger alert-custom" role="alert">
@@ -865,47 +833,13 @@
 
     <!-- ========== JAVASCRIPT PARA FILTRADO POR AÑO ========== -->
     <script>
-        /**
-         * Función para filtrar estadísticas por año
-         * @param {number|string} ano - Año a filtrar o 'todos' para mostrar todos
-         */
         function filtrarPorAnio(ano) {
-            // Obtener la URL actual
             const url = new URL(window.location.href);
             const params = new URLSearchParams(url.search);
-            
-            if (ano === 'todos') {
-                // Quitar filtros de fecha para mostrar todos los años de la ventana
-                params.delete('fecha_inicio');
-                params.delete('fecha_fin');
-            } else {
-                // Establecer filtros para el año específico
-                const fechaInicio = ano + '-01-01';
-                const fechaFin = ano + '-12-31';
-                
-                params.set('fecha_inicio', fechaInicio);
-                params.set('fecha_fin', fechaFin);
-            }
-            
-            // Mantener otros filtros (evento, programa)
-            // Redirigir a la nueva URL con los parámetros actualizados
+            params.set('fecha_inicio', ano + '-01-01');
+            params.set('fecha_fin', ano + '-12-31');
             window.location.href = url.pathname + '?' + params.toString();
         }
-        
-        // Agregar efecto visual al hacer clic en los botones
-        document.addEventListener('DOMContentLoaded', function() {
-            const yearButtons = document.querySelectorAll('.btn-year-filter');
-            
-            yearButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Feedback visual inmediato
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
-                });
-            });
-        });
     </script>
     <!-- ====================================================== -->
 </body>
