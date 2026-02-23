@@ -1631,10 +1631,6 @@ def estadisticas():
         return redirect(url_for("login"))
 
     try:
-        # ========== NUEVA FUNCIONALIDAD: VENTANA DE 5 AÑOS ==========
-        # Obtener la ventana de años (últimos 5 años)
-        anos_ventana, ano_inicio_ventana, ano_fin_ventana = get_ventana_anos(5)
-        
         # Obtener filtros de la URL
         evento_filtro = request.args.get('evento', '')
         programa_filtro = request.args.get('programa', '')
@@ -1642,18 +1638,20 @@ def estadisticas():
         fecha_fin = request.args.get('fecha_fin', '')
         
         with get_db_connection() as conn:
+            # Obtener años reales con datos (máximo últimos 5)
+            query_anos = adapt_query("""
+                SELECT DISTINCT CAST(SUBSTR(fecha_evento, 1, 4) AS INTEGER) as ano
+                FROM asistencias
+                WHERE fecha_evento IS NOT NULL AND fecha_evento != ''
+                ORDER BY ano DESC
+                LIMIT 5
+            """)
+            df_anos = pd.read_sql_query(query_anos, conn)
+            anos_con_datos = sorted(df_anos['ano'].tolist()) if not df_anos.empty else []
+
             # Query base con filtros opcionales
             where_clauses = []
             params = []
-            
-            # ========== FILTRO AUTOMÁTICO POR VENTANA DE AÑOS ==========
-            # Siempre filtrar por la ventana de 5 años, a menos que el usuario especifique fechas
-            if not fecha_inicio and not fecha_fin:
-                # Aplicar filtro de ventana de años automáticamente
-                where_clauses.append("CAST(SUBSTR(fecha_evento, 1, 4) AS INTEGER) >= ?")
-                params.append(ano_inicio_ventana)
-                where_clauses.append("CAST(SUBSTR(fecha_evento, 1, 4) AS INTEGER) <= ?")
-                params.append(ano_fin_ventana)
             
             if evento_filtro:
                 where_clauses.append("nombre_evento = ?")
@@ -1796,11 +1794,7 @@ def estadisticas():
         if df_eventos.empty:
             return render_template("estadisticas_avanzadas.html", 
                                  mensaje="No hay datos disponibles para mostrar estadísticas",
-                                 ventana_anos={
-                                     'anos': anos_ventana,
-                                     'ano_inicio': ano_inicio_ventana,
-                                     'ano_fin': ano_fin_ventana
-                                 },
+                                 anos_con_datos=anos_con_datos,
                                  filtros={
                                      'evento': evento_filtro,
                                      'programa': programa_filtro,
@@ -1884,12 +1878,8 @@ def estadisticas():
                              modalidad_labels=modalidad_labels,
                              modalidad_valores=modalidad_valores,
                              
-                             # Ventana de años
-                             ventana_anos={
-                                 'anos': anos_ventana,
-                                 'ano_inicio': ano_inicio_ventana,
-                                 'ano_fin': ano_fin_ventana
-                             },
+                             # Años con datos para botones de filtro rápido
+                             anos_con_datos=anos_con_datos,
                              
                              # Filtros
                              filtros={
@@ -1904,14 +1894,9 @@ def estadisticas():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        anos_ventana, ano_inicio_ventana, ano_fin_ventana = get_ventana_anos(5)
         return render_template("estadisticas_avanzadas.html", 
                              error=f"Error cargando estadísticas: {str(e)}",
-                             ventana_anos={
-                                 'anos': anos_ventana,
-                                 'ano_inicio': ano_inicio_ventana,
-                                 'ano_fin': ano_fin_ventana
-                             },
+                             anos_con_datos=[],
                              filtros={
                                  'evento': '',
                                  'programa': '',
