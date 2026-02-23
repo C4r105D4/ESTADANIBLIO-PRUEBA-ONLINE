@@ -2494,6 +2494,32 @@ def limpiar_datos_route():
                              error=f"Error al limpiar datos: {str(e)}",
                              total_registros=0)
 
+@app.route('/exportar-bd-temp')
+def exportar_bd_temp():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    
+    import subprocess
+    db_url = os.environ.get('DATABASE_URL', '')
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    
+    result = subprocess.run(
+        ['pg_dump', db_url, '--no-owner', '--no-acl', '-F', 'p'],
+        capture_output=True, text=True
+    )
+    
+    if result.returncode != 0:
+        return f"Error al exportar: {result.stderr}", 500
+    
+    buffer = io.BytesIO(result.stdout.encode('utf-8'))
+    return send_file(
+        buffer,
+        mimetype='text/plain',
+        as_attachment=True,
+        download_name='backup.sql'
+    )
+
 
 # ============================================
 # MANEJADORES DE ERRORES MEJORADOS
