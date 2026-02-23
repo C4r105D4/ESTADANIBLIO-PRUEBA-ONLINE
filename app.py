@@ -2494,6 +2494,43 @@ def limpiar_datos_route():
                              error=f"Error al limpiar datos: {str(e)}",
                              total_registros=0)
 
+@app.route('/importar-bd-temp', methods=['GET', 'POST'])
+def importar_bd_temp():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    
+    if request.method == 'POST':
+        archivo = request.files.get('backup')
+        if not archivo:
+            return "No se subió ningún archivo", 400
+        
+        import subprocess, tempfile
+        db_url = os.environ.get('DATABASE_URL', '')
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        
+        with tempfile.NamedTemporaryFile(suffix='.sql', delete=False, mode='wb') as f:
+            archivo.save(f)
+            tmp_path = f.name
+        
+        result = subprocess.run(
+            ['psql', db_url, '-f', tmp_path],
+            capture_output=True, text=True
+        )
+        os.unlink(tmp_path)
+        
+        if result.returncode != 0:
+            return f"<pre>Error:\n{result.stderr}</pre>", 500
+        
+        return "<h2>✅ Backup restaurado exitosamente!</h2>"
+    
+    return '''
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="backup" accept=".sql">
+            <button type="submit">Restaurar</button>
+        </form>
+    '''
+
 
 # ============================================
 # MANEJADORES DE ERRORES MEJORADOS
