@@ -320,12 +320,18 @@
 
     <div class="main-container">
         <!-- Page Header -->
-        <div class="page-header">
-            <h1>
-                <i class="bi bi-star-fill"></i>
-                Evaluaciones de Capacitadores
-            </h1>
-            <p>Visualiza y analiza las evaluaciones recibidas por los capacitadores en las diferentes actividades</p>
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1>
+                    <i class="bi bi-star-fill"></i>
+                    Evaluaciones de Capacitadores
+                </h1>
+                <p>Visualiza y analiza las evaluaciones recibidas por los capacitadores en las diferentes actividades</p>
+            </div>
+            <button id="btnDescargarPDF" class="btn btn-danger btn-lg d-flex align-items-center gap-2 shadow-sm" onclick="generarPDF()">
+                <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                <span>Descargar PDF</span>
+            </button>
         </div>
 
         <!-- Global Stats -->
@@ -538,6 +544,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -586,6 +594,238 @@
                 }
             );
         });
+
+        async function generarPDF() {
+            const btn = document.getElementById('btnDescargarPDF');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Generando...';
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+
+            // Fecha de generación
+            const fechaHoy = new Date().toLocaleDateString('es-CO', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Función helper: captura una sección y la agrega al PDF
+            async function agregarSeccion(selectorEl, tituloSeccion) {
+                const el = document.querySelector(selectorEl);
+                if (!el) return;
+
+                const canvas = await html2canvas(el, {
+                    scale: 1.8,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const imgWidth = pageWidth - margin * 2;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                let posY = margin;
+
+                // Si no cabe en la página actual, agregar nueva página
+                if (pdf.internal.getCurrentPageInfo().pageNumber > 1) {
+                    pdf.addPage();
+                }
+
+                // Encabezado de sección
+                pdf.setFillColor(0, 119, 139);
+                pdf.roundedRect(margin, posY, pageWidth - margin * 2, 10, 2, 2, 'F');
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(tituloSeccion, margin + 4, posY + 7);
+                posY += 13;
+
+                // Imagen de la sección (con paginación automática si es muy larga)
+                let remainingHeight = imgHeight;
+                let sourceY = 0;
+                const availableHeight = pageHeight - posY - margin;
+
+                if (remainingHeight <= availableHeight) {
+                    pdf.addImage(imgData, 'JPEG', margin, posY, imgWidth, imgHeight);
+                } else {
+                    // Recortar en páginas
+                    const ratio = canvas.width / imgWidth;
+                    let firstSlice = availableHeight;
+                    pdf.addImage(imgData, 'JPEG', margin, posY, imgWidth, imgHeight, '', 'FAST', 0,
+                        0, 0, 0, 0, firstSlice * ratio);
+
+                    remainingHeight -= firstSlice;
+                    sourceY += firstSlice;
+
+                    while (remainingHeight > 0) {
+                        pdf.addPage();
+                        const sliceHeight = Math.min(remainingHeight, pageHeight - margin * 2);
+                        pdf.addImage(
+                            imgData, 'JPEG',
+                            margin, margin,
+                            imgWidth, imgHeight,
+                            '', 'FAST',
+                            0, sourceY * ratio, 0, sliceHeight * ratio
+                        );
+                        remainingHeight -= sliceHeight;
+                        sourceY += sliceHeight;
+                    }
+                }
+            }
+
+            try {
+                // --- PORTADA ---
+                // Encabezado
+                pdf.setFillColor(0, 119, 139);
+                pdf.rect(0, 0, pageWidth, 38, 'F');
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(18);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('ESTADANIBLIO', margin, 16);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text('Reporte de Evaluaciones de Capacitadores', margin, 27);
+                pdf.setFontSize(9);
+                pdf.text('Universidad Católica Luis Amigó', margin, 34);
+
+                // Fecha
+                pdf.setTextColor(100, 100, 100);
+                pdf.setFontSize(9);
+                pdf.setFont('helvetica', 'italic');
+                pdf.text(`Generado el: ${fechaHoy}`, margin, 44);
+
+                // Línea divisoria
+                pdf.setDrawColor(0, 119, 139);
+                pdf.setLineWidth(0.5);
+                pdf.line(margin, 46, pageWidth - margin, 46);
+
+                // --- TARJETAS DE ESTADÍSTICAS ---
+                const statsEl = document.querySelector('.stats-grid');
+                if (statsEl) {
+                    const canvas = await html2canvas(statsEl, {
+                        scale: 1.8, useCORS: true, backgroundColor: null, logging: false
+                    });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const imgW = pageWidth - margin * 2;
+                    const imgH = (canvas.height * imgW) / canvas.width;
+                    pdf.addImage(imgData, 'JPEG', margin, 50, imgW, imgH);
+                }
+
+                // --- TABLA ESTADÍSTICAS POR CAPACITADOR ---
+                pdf.addPage();
+                const tablaCapEl = document.querySelector('.table-container:first-of-type');
+                if (tablaCapEl) {
+                    const canvas = await html2canvas(tablaCapEl, {
+                        scale: 1.5, useCORS: true, backgroundColor: '#ffffff', logging: false
+                    });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const imgW = pageWidth - margin * 2;
+                    const imgH = (canvas.height * imgW) / canvas.width;
+
+                    // Título
+                    pdf.setFillColor(0, 119, 139);
+                    pdf.roundedRect(margin, margin, pageWidth - margin * 2, 10, 2, 2, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(11);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Estadísticas por Capacitador', margin + 4, margin + 7);
+
+                    // Imagen de la tabla (puede ocupar varias páginas)
+                    let posY = margin + 13;
+                    const availH = pageHeight - posY - margin;
+                    if (imgH <= availH) {
+                        pdf.addImage(imgData, 'JPEG', margin, posY, imgW, imgH);
+                    } else {
+                        const ratio = canvas.width / imgW;
+                        pdf.addImage(imgData, 'JPEG', margin, posY, imgW, imgH);
+                    }
+                }
+
+                // --- TABLA EVALUACIONES INDIVIDUALES ---
+                pdf.addPage();
+                const tablaEvalEl = document.querySelectorAll('.table-container')[1];
+                if (tablaEvalEl) {
+                    const canvas = await html2canvas(tablaEvalEl, {
+                        scale: 1.3, useCORS: true, backgroundColor: '#ffffff', logging: false
+                    });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.88);
+                    const imgW = pageWidth - margin * 2;
+                    const imgH = (canvas.height * imgW) / canvas.width;
+
+                    pdf.setFillColor(0, 119, 139);
+                    pdf.roundedRect(margin, margin, pageWidth - margin * 2, 10, 2, 2, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(11);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Evaluaciones Individuales', margin + 4, margin + 7);
+
+                    let posY = margin + 13;
+                    const availH = pageHeight - posY - margin;
+
+                    if (imgH <= availH) {
+                        pdf.addImage(imgData, 'JPEG', margin, posY, imgW, imgH);
+                    } else {
+                        // Dividir en múltiples páginas
+                        const ratio = canvas.height / imgH;
+                        let sliceH = availH;
+                        let canvasY = 0;
+                        let firstPage = true;
+
+                        while (canvasY < canvas.height) {
+                            const canvasSlice = sliceH * ratio;
+                            const remainCanvas = canvas.height - canvasY;
+                            const actualSlice = Math.min(canvasSlice, remainCanvas);
+                            const actualImgH = actualSlice / ratio;
+
+                            // Crear canvas recortado
+                            const tmpCanvas = document.createElement('canvas');
+                            tmpCanvas.width = canvas.width;
+                            tmpCanvas.height = actualSlice;
+                            const ctx = tmpCanvas.getContext('2d');
+                            ctx.drawImage(canvas, 0, canvasY, canvas.width, actualSlice, 0, 0, canvas.width, actualSlice);
+
+                            const sliceData = tmpCanvas.toDataURL('image/jpeg', 0.88);
+                            if (!firstPage) {
+                                pdf.addPage();
+                                posY = margin;
+                                sliceH = pageHeight - margin * 2;
+                            }
+                            pdf.addImage(sliceData, 'JPEG', margin, posY, imgW, actualImgH);
+                            canvasY += actualSlice;
+                            firstPage = false;
+                        }
+                    }
+                }
+
+                // --- PIE DE PÁGINA en todas las páginas ---
+                const totalPaginas = pdf.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPaginas; i++) {
+                    pdf.setPage(i);
+                    pdf.setDrawColor(0, 119, 139);
+                    pdf.setLineWidth(0.3);
+                    pdf.line(margin, pageHeight - 8, pageWidth - margin, pageHeight - 8);
+                    pdf.setTextColor(120, 120, 120);
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text('ESTADANIBLIO – Universidad Católica Luis Amigó', margin, pageHeight - 4);
+                    pdf.text(`Página ${i} de ${totalPaginas}`, pageWidth - margin - 20, pageHeight - 4);
+                }
+
+                const fecha = new Date().toISOString().slice(0, 10);
+                pdf.save(`Evaluaciones_Capacitadores_${fecha}.pdf`);
+
+            } catch (e) {
+                console.error('Error al generar PDF:', e);
+                alert('Ocurrió un error al generar el PDF. Por favor intenta de nuevo.');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-file-earmark-pdf-fill fs-5"></i><span>Descargar PDF</span>';
+        }
     </script>
 </body>
 </html>
